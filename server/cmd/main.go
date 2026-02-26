@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"task-manager-server/internal/config"
 	"task-manager-server/internal/handlers"
 	"task-manager-server/internal/middleware"
 	"task-manager-server/internal/routes"
@@ -11,12 +12,16 @@ import (
 )
 
 func main() {
-	log.Println("Server starting on port 8080...")
-	log.Println("Welcome to Task Manager API with Authentication!")
+	// Initialize DB
+	db, err := config.NewDB()
+	if err != nil {
+		log.Fatalf("failed to connect DB: %v", err)
+	}
+	defer db.Close()
 
-	// Initialize services
-	authService := services.NewAuthService()
-	taskService := services.NewTaskService()
+	// Initialize services (MySQL-backed)
+	authService := services.NewAuthService(db)
+	taskService := services.NewTaskService(db)
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService, taskService)

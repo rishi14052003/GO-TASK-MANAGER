@@ -10,12 +10,13 @@ import (
 func SetupRoutes(authHandler *handlers.AuthHandler, taskHandler *handlers.TaskHandler) http.Handler {
 	mux := http.NewServeMux()
 
-	// Auth routes
+	// Auth routes (no auth middleware needed)
 	mux.HandleFunc("/api/register", authHandler.Register)
 	mux.HandleFunc("/api/login", authHandler.Login)
 
-	// Task routes
-	mux.HandleFunc("/api/tasks", func(w http.ResponseWriter, r *http.Request) {
+	// Task routes (protected with auth middleware)
+	taskMux := http.NewServeMux()
+	taskMux.HandleFunc("/api/tasks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			taskHandler.GetTasks(w, r)
@@ -25,8 +26,7 @@ func SetupRoutes(authHandler *handlers.AuthHandler, taskHandler *handlers.TaskHa
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
-
-	mux.HandleFunc("/api/tasks/", func(w http.ResponseWriter, r *http.Request) {
+	taskMux.HandleFunc("/api/tasks/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPut:
 			taskHandler.UpdateTask(w, r)
@@ -37,6 +37,10 @@ func SetupRoutes(authHandler *handlers.AuthHandler, taskHandler *handlers.TaskHa
 		}
 	})
 
-	// Apply CORS middleware
+	// Mount protected task handlers under the main mux
+	mux.Handle("/api/tasks", middleware.AuthMiddleware(taskMux))
+	mux.Handle("/api/tasks/", middleware.AuthMiddleware(taskMux))
+
+	// Apply CORS middleware to the entire mux
 	return middleware.CORSMiddleware(mux)
 }

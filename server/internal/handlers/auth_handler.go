@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -74,6 +75,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Token: tokenString,
 	}
 
+	log.Printf("Register: created user=%d email=%s", user.ID, user.Email)
 	writeJSON(w, http.StatusCreated, response)
 }
 
@@ -95,6 +97,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("Login: user=%d email=%s", response.User.ID, response.User.Email)
 	writeJSON(w, http.StatusOK, response)
 }
 

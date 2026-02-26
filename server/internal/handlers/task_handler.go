@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"task-manager-server/internal/middleware"
 	"task-manager-server/internal/models"
 	"task-manager-server/internal/services"
 )
@@ -37,6 +39,8 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to get tasks", http.StatusInternalServerError)
 		return
 	}
+
+	log.Printf("GetTasks: user=%d returned=%d tasks", userID, len(tasks))
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -101,6 +105,8 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("CreateTask: user=%d id=%d title=%s", userID, task.ID, task.Title)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(task)
@@ -150,6 +156,7 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(existingTask)
+	log.Printf("UpdateTask: user=%d id=%d title=%s done=%v", userID, id, existingTask.Title, existingTask.Done)
 }
 
 func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
@@ -181,27 +188,34 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Task deleted successfully"})
+	log.Printf("DeleteTask: user=%d id=%d", userID, id)
 }
 
 func (h *TaskHandler) getUserIDFromContext(r *http.Request) int {
-	// This would typically get the user ID from the JWT token context
-	// For now, returning a placeholder
-	return 1
+	userID := r.Context().Value(middleware.UserIDKey)
+	if userID == nil {
+		return -1
+	}
+	id, ok := userID.(int)
+	if !ok {
+		return -1
+	}
+	return id
 }
 
 func (h *TaskHandler) extractTaskID(r *http.Request) int {
 	// Extract ID from URL path like /api/tasks/123
 	path := strings.TrimPrefix(r.URL.Path, "/api/tasks/")
 	path = strings.TrimSuffix(path, "/")
-	
+
 	if path == "" {
 		return -1
 	}
-	
+
 	id, err := strconv.Atoi(path)
 	if err != nil {
 		return -1
 	}
-	
+
 	return id
 }

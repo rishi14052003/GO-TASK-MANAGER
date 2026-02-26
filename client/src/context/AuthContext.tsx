@@ -58,6 +58,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       AUTH_STORAGE_KEY,
       JSON.stringify({ user: nextUser, token: nextToken }),
     )
+    console.log('AuthProvider: persisted auth for', nextUser.email)
   }, [])
 
   const clear = useCallback(() => {

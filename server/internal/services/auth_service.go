@@ -1,8 +1,8 @@
 package services
 
 import (
+	"database/sql"
 	"fmt"
-	"sync"
 	"time"
 
 	"task-manager-server/internal/models"
@@ -12,27 +12,27 @@ import (
 )
 
 type AuthService struct {
-	users     map[int]models.User
-	emailMap  map[string]int
-	nextID    int
-	mu        sync.RWMutex
+	db        *sql.DB
 	jwtSecret []byte
 }
 
-func NewAuthService() *AuthService {
+func NewAuthService(db *sql.DB) *AuthService {
 	return &AuthService{
-		users:     make(map[int]models.User),
-		emailMap:  make(map[string]int),
-		nextID:    1,
+		db:        db,
 		jwtSecret: []byte("your-secret-key-change-in-production"),
 	}
 }
 
 func (s *AuthService) Register(req *models.RegisterRequest) (*models.User, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if _, exists := s.emailMap[req.Email]; exists {
+	// Check if email already exists
+	var exists int
+	if err := s.db.QueryRow(
+		"SELECT 1 FROM users WHERE email = ? LIMIT 1",
+		req.Email,
+	).Scan(&exists); err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	if exists == 1 {
 		return nil, fmt.Errorf("email already registered")
 	}
 
@@ -42,8 +42,26 @@ func (s *AuthService) Register(req *models.RegisterRequest) (*models.User, error
 	}
 
 	now := time.Now()
+
+	res, err := s.db.Exec(
+		"INSERT INTO users (name, email, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+		req.Name,
+		req.Email,
+		string(hashedPassword),
+		now,
+		now,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+
 	user := models.User{
-		ID:        s.nextID,
+		ID:        int(id),
 		Name:      req.Name,
 		Email:     req.Email,
 		Password:  string(hashedPassword),
@@ -51,36 +69,43 @@ func (s *AuthService) Register(req *models.RegisterRequest) (*models.User, error
 		UpdatedAt: now,
 	}
 
-	s.users[user.ID] = user
-	s.emailMap[user.Email] = user.ID
-	s.nextID++
-
 	return &user, nil
 }
 
 func (s *AuthService) Login(req *models.LoginRequest) (*models.AuthResponse, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	var user models.User
 
-	userID, exists := s.emailMap[req.Email]
-	if !exists {
+	// Fetch user by email
+	err := s.db.QueryRow(
+		"SELECT id, name, email, password, created_at, updated_at FROM users WHERE email = ? LIMIT 1",
+		req.Email,
+	).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("invalid email")
 	}
-
-	user, exists := s.users[userID]
-	if !exists {
-		return nil, fmt.Errorf("invalid email")
+	if err != nil {
+		return nil, err
 	}
 
+	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		// Keep the same message so frontend still shows "invalid email"
 		return nil, fmt.Errorf("invalid email")
 	}
 
+	// Generate JWT
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user.ID,
 		"email":   user.Email,
 		"name":    user.Name,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	})
 
 	tokenString, err := token.SignedString(s.jwtSecret)

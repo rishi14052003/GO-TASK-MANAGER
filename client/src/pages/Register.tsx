@@ -7,18 +7,29 @@ const Register = () => {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [localError, setLocalError] = useState<string | null>(null)
   const navigate = useNavigate()
   const { register, error } = useAuth()
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (isSubmitting) return
+    setLocalError(null)
+    if (password !== confirmPassword) {
+      setLocalError('Passwords do not match')
+      return
+    }
+
     setIsSubmitting(true)
 
     register({ name, email, password })
       .then(() => {
         navigate('/login', { replace: true })
+      })
+      .catch(() => {
+        // register will set shared error in context; we don't need to do more here
       })
       .finally(() => {
         setIsSubmitting(false)
@@ -132,6 +143,25 @@ const Register = () => {
                 />
               </div>
 
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="confirm-password"
+                  className="block text-sm font-medium text-slate-200"
+                >
+                  Confirm password
+                </label>
+                <input
+                  id="confirm-password"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                  placeholder="Repeat your password"
+                />
+              </div>
+
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -152,6 +182,11 @@ const Register = () => {
             </p>
               </div>
 
+              {localError && (
+                <p className="text-sm text-rose-400 bg-rose-950/40 border border-rose-900 rounded-md px-3 py-2">
+                  {localError}
+                </p>
+              )}
               {error && (
                 <p className="text-sm text-rose-400 bg-rose-950/40 border border-rose-900 rounded-md px-3 py-2">
                   {error}

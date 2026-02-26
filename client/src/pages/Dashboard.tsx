@@ -24,8 +24,11 @@ const Dashboard = () => {
       setIsLoading(true)
       setError(null)
       try {
+        console.log('Dashboard: fetching tasks with token', token)
         const data = await api.getTasks(token)
-        setTasks(data)
+        // Backend might sometimes return null or an unexpected shape;
+        // always normalize to an array to keep rendering safe.
+        setTasks(Array.isArray(data) ? data : [])
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : 'Unable to load tasks.'
@@ -159,7 +162,7 @@ const Dashboard = () => {
           <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5 space-y-3">
             <div className="flex items-center justify-between mb-1">
               <p className="text-sm font-medium text-slate-100">
-                Tasks ({tasks.length})
+                Tasks ({Array.isArray(tasks) ? tasks.length : 0})
               </p>
             </div>
             {error && (
