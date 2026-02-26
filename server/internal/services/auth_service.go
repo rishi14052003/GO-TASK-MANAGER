@@ -2,97 +2,66 @@ package services
 
 import (
 	"errors"
-	"os"
 	"time"
+
+	"task-manager-server/internal/models"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
-	"task-manager-server/internal/models"
-	"task-manager-server/internal/repository"
 )
 
-type AuthService interface {
-	Register(req *models.UserRegisterRequest) (*models.User, error)
-	Login(req *models.UserLoginRequest) (*models.UserLoginResponse, error)
-	GenerateToken(userID int) (string, error)
+type AuthService struct{}
+
+func NewAuthService() *AuthService {
+	return &AuthService{}
 }
 
-type authService struct {
-	userRepo repository.UserRepository
-}
-
-func NewAuthService(userRepo repository.UserRepository) AuthService {
-	return &authService{
-		userRepo: userRepo,
-	}
-}
-
-func (s *authService) Register(req *models.UserRegisterRequest) (*models.User, error) {
-	existingUser, err := s.userRepo.GetByEmail(req.Email)
-	if err != nil {
-		return nil, err
-	}
-	if existingUser != nil {
-		return nil, errors.New("user already exists with this email")
-	}
-
+func (s *AuthService) Register(req *models.UserRegisterRequest) (*models.UserResponse, error) {
+	// In a real app, you'd check if user exists and save to database
+	// For now, just return a mock user
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
 
 	user := &models.User{
-		Name:     req.Name,
+		ID:       1,
+		Username: req.Username,
 		Email:    req.Email,
 		Password: string(hashedPassword),
 	}
 
-	err = s.userRepo.Create(user)
-	if err != nil {
-		return nil, err
-	}
-
-	user.Password = ""
-	return user, nil
-}
-
-func (s *authService) Login(req *models.UserLoginRequest) (*models.UserLoginResponse, error) {
-	user, err := s.userRepo.GetByEmail(req.Email)
-	if err != nil {
-		return nil, err
-	}
-	if user == nil {
-		return nil, errors.New("invalid credentials")
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
-	if err != nil {
-		return nil, errors.New("invalid credentials")
-	}
-
-	token, err := s.GenerateToken(user.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	user.Password = ""
-	return &models.UserLoginResponse{
-		Token: token,
-		User:  *user,
+	return &models.UserResponse{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
 	}, nil
 }
 
-func (s *authService) GenerateToken(userID int) (string, error) {
-	claims := jwt.MapClaims{
-		"user_id": userID,
-		"exp":     time.Now().Add(time.Hour * 24 * 7).Unix(), // 7 days
+func (s *AuthService) Login(req *models.UserLoginRequest) (*models.LoginResponse, error) {
+	// In a real app, you'd verify credentials against database
+	// For now, just return a mock token
+	if req.Username == "" || req.Password == "" {
+		return nil, errors.New("invalid credentials")
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "default-secret"
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":  1,
+		"username": req.Username,
+		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	tokenString, err := token.SignedString([]byte("your-secret-key"))
+	if err != nil {
+		return nil, err
 	}
 
-	return token.SignedString([]byte(secret))
+	return &models.LoginResponse{
+		Token: tokenString,
+		User: models.UserResponse{
+			ID:       1,
+			Username: req.Username,
+			Email:    req.Username + "@example.com",
+		},
+	}, nil
 }

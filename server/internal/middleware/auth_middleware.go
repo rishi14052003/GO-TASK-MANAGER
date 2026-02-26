@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -27,21 +26,11 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		secret := os.Getenv("JWT_SECRET")
-		if secret == "" {
-			secret = "default-secret"
-		}
-
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return []byte(secret), nil
+			return []byte("your-secret-key"), nil
 		})
 
-		if err != nil {
-			http.Error(w, "Invalid token", http.StatusUnauthorized)
-			return
-		}
-
-		if !token.Valid {
+		if err != nil || !token.Valid {
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
 			return
 		}
