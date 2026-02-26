@@ -91,8 +91,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setError(null)
       setIsLoading(true)
       try {
-        const { user: newUser, token: jwt } = await api.register(payload)
-        persist(newUser, jwt)
+        await api.register(payload)
+        // Do not persist auth on register; user must log in explicitly
       } catch (err) {
         const message =
           err instanceof Error
@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setIsLoading(false)
       }
     },
-    [persist],
+    [],
   )
 
   const logout = useCallback(() => {

@@ -2,6 +2,7 @@ import type {
   LoginRequest,
   RegisterRequest,
   AuthResponse,
+  User,
 } from '../types/user'
 import type {
   Task,
@@ -39,6 +40,7 @@ async function request<TResponse>(
   }
 
   if (!isJson) {
+    // @ts-expect-error - callers using TResponse should not request non-JSON types
     return undefined
   }
 
@@ -53,8 +55,8 @@ export const api = {
     })
   },
 
-  register(body: RegisterRequest): Promise<AuthResponse> {
-    return request<AuthResponse>('/register', {
+  register(body: RegisterRequest): Promise<User> {
+    return request<User>('/register', {
       method: 'POST',
       body: JSON.stringify(body),
     })
