@@ -1,4 +1,5 @@
-import { FormEvent, useState } from 'react'
+import type { FormEvent } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 const Login = () => {
@@ -12,12 +13,11 @@ const Login = () => {
     if (isSubmitting) return
     setIsSubmitting(true)
 
-    // TODO: integrate real login API + AuthContext
     setTimeout(() => {
       window.localStorage.setItem('token', 'demo-token')
       setIsSubmitting(false)
       navigate('/dashboard', { replace: true })
-    }, 800)
+    }, 2000)
   }
 
   return (

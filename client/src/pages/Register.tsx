@@ -1,4 +1,5 @@
-import { FormEvent, useState } from 'react'
+import type { FormEvent } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 const Register = () => {
@@ -13,11 +14,10 @@ const Register = () => {
     if (isSubmitting) return
     setIsSubmitting(true)
 
-    // TODO: integrate real register API + redirect to login
     setTimeout(() => {
       setIsSubmitting(false)
       navigate('/login', { replace: true })
-    }, 800)
+    }, 2000)
   }
 
   return (
