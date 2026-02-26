@@ -1,32 +1,55 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
+	"os"
+
+	"task-manager-server/internal/config"
+	"task-manager-server/internal/handlers"
+	"task-manager-server/internal/repository"
+	"task-manager-server/internal/routes"
+	"task-manager-server/internal/services"
+
+	"github.com/joho/godotenv"
 )
 
-type Task struct {
-	ID    int    `json:"id"`
-	Title string `json:"title"`
-	Done  bool   `json:"done"`
-}
-
-func tasksHandler(w http.ResponseWriter, r *http.Request) {
-	tasks := []Task{
-		{ID: 1, Title: "Learn Go", Done: false},
-		{ID: 2, Title: "Build API", Done: false},
+func main() {
+	// Load environment variables
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found")
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(tasks)
-}
+	// Initialize database
+	db, err := config.NewDB()
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+	defer db.Close()
 
-func main() {
-	fmt.Println("Server starting on port 8080...")
-	fmt.Println("Welcome to the Task Manager API!")
+	// Initialize repositories
+	userRepo := repository.NewUserRepository(db)
+	taskRepo := repository.NewTaskRepository(db)
 
-	http.HandleFunc("/tasks", tasksHandler)
+	// Initialize services
+	authService := services.NewAuthService(userRepo)
+	taskService := services.NewTaskService(taskRepo)
 
-	http.ListenAndServe(":8080", nil)
+	// Initialize handlers
+	authHandler := handlers.NewAuthHandler(authService)
+	taskHandler := handlers.NewTaskHandler(taskService)
+
+	// Setup routes
+	handler := routes.SetupRoutes(authHandler, taskHandler)
+
+	// Get port from environment
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Printf("Server starting on port %s", port)
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
+		log.Fatal("Server failed to start:", err)
+	}
 }
