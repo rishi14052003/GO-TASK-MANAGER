@@ -3,21 +3,21 @@ package services
 import (
 	"errors"
 	"sync"
+	"time"
 
 	"task-manager-server/internal/models"
 )
 
 type TaskService struct {
-	tasks []models.Task
-	mu    sync.RWMutex
+	tasks  map[int]models.Task
+	nextID int
+	mu     sync.RWMutex
 }
 
 func NewTaskService() *TaskService {
 	return &TaskService{
-		tasks: []models.Task{
-			{ID: 1, Title: "Sample Task 1", Description: "This is a sample task", Done: false, UserID: 1},
-			{ID: 2, Title: "Sample Task 2", Description: "Another sample task", Done: true, UserID: 1},
-		},
+		tasks:  make(map[int]models.Task),
+		nextID: 1,
 	}
 }
 
@@ -48,54 +48,23 @@ func (s *TaskService) GetTask(id, userID int) (*models.Task, error) {
 	return nil, errors.New("task not found")
 }
 
-func (s *TaskService) CreateTask(req *models.TaskCreateRequest, userID int) (*models.Task, error) {
+func (s *TaskService) CreateTask(req *models.CreateTaskRequest, userID int) (*models.Task, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	newTask := models.Task{
-		ID:          len(s.tasks) + 1,
+	now := time.Now()
+	task := models.Task{
+		ID:          s.nextID,
 		Title:       req.Title,
 		Description: req.Description,
-		Done:        false,
+		Done:        req.Done,
 		UserID:      userID,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 
-	s.tasks = append(s.tasks, newTask)
-	return &newTask, nil
-}
+	s.tasks[task.ID] = task
+	s.nextID++
 
-func (s *TaskService) UpdateTask(id int, req *models.TaskUpdateRequest, userID int) (*models.Task, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for i, task := range s.tasks {
-		if task.ID == id && task.UserID == userID {
-			if req.Title != nil {
-				s.tasks[i].Title = *req.Title
-			}
-			if req.Description != nil {
-				s.tasks[i].Description = *req.Description
-			}
-			if req.Done != nil {
-				s.tasks[i].Done = *req.Done
-			}
-			return &s.tasks[i], nil
-		}
-	}
-
-	return nil, errors.New("task not found")
-}
-
-func (s *TaskService) DeleteTask(id, userID int) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for i, task := range s.tasks {
-		if task.ID == id && task.UserID == userID {
-			s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
-			return nil
-		}
-	}
-
-	return errors.New("task not found")
+	return &task, nil
 }

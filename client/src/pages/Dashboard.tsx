@@ -19,24 +19,31 @@ const Dashboard = () => {
     if (!token) {
       return
     }
-    setIsLoading(true)
-    setError(null)
-    api
-      .getTasks(token)
-      .then((data) => setTasks(data))
-      .catch((err: unknown) => {
+
+    const fetchTasks = async () => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const data = await api.getTasks(token)
+        setTasks(data)
+      } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : 'Unable to load tasks.'
         setError(message)
-      })
-      .finally(() => {
+      } finally {
         setIsLoading(false)
-      })
+      }
+    }
+
+    fetchTasks()
   }, [token])
 
   const stats = useMemo(() => {
+    if (!tasks || !Array.isArray(tasks)) {
+      return { total: 0, completed: 0, pending: 0, completionRate: 0 }
+    }
     const total = tasks.length
-    const completed = tasks.filter((t) => t.completed).length
+    const completed = tasks.filter((t) => t.done).length
     const pending = total - completed
     const completionRate = total === 0 ? 0 : Math.round((completed / total) * 100)
     return { total, completed, pending, completionRate }
@@ -67,9 +74,9 @@ const Dashboard = () => {
     if (!token) return
     const task = tasks.find((t) => t.id === id)
     if (!task) return
-    const nextCompleted = !task.completed
+    const nextDone = !task.done
     api
-      .updateTask(token, id, { completed: nextCompleted })
+      .updateTask(token, id, { done: nextDone })
       .then((updated) => {
         setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
       })
@@ -174,7 +181,7 @@ const Dashboard = () => {
                     id={task.id}
                     title={task.title}
                     description={task.description}
-                    completed={task.completed}
+                    done={task.done}
                     onToggle={toggleTask}
                     onDelete={deleteTask}
                   />

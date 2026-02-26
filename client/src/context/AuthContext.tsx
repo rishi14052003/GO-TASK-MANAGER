@@ -9,6 +9,7 @@ import {
 } from 'react'
 import { api } from '../services/api'
 import type { User, LoginRequest, RegisterRequest } from '../types/user'
+import { AUTH_STORAGE_KEY } from './constants'
 
 type AuthState = {
   user: User | null
@@ -29,8 +30,6 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 type AuthProviderProps = {
   children: ReactNode
 }
-
-const AUTH_STORAGE_KEY = 'gotaskpro_auth'
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null)

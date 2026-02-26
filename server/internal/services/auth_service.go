@@ -1,7 +1,8 @@
 package services
 
 import (
-	"errors"
+	"fmt"
+	"sync"
 	"time"
 
 	"task-manager-server/internal/models"
@@ -10,58 +11,85 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type AuthService struct{}
-
-func NewAuthService() *AuthService {
-	return &AuthService{}
+type AuthService struct {
+	users     map[int]models.User
+	emailMap  map[string]int
+	nextID    int
+	mu        sync.RWMutex
+	jwtSecret []byte
 }
 
-func (s *AuthService) Register(req *models.UserRegisterRequest) (*models.UserResponse, error) {
-	// In a real app, you'd check if user exists and save to database
-	// For now, just return a mock user
+func NewAuthService() *AuthService {
+	return &AuthService{
+		users:     make(map[int]models.User),
+		emailMap:  make(map[string]int),
+		nextID:    1,
+		jwtSecret: []byte("your-secret-key-change-in-production"),
+	}
+}
+
+func (s *AuthService) Register(req *models.RegisterRequest) (*models.User, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, exists := s.emailMap[req.Email]; exists {
+		return nil, fmt.Errorf("email already registered")
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
 
-	user := &models.User{
-		ID:       1,
-		Username: req.Username,
-		Email:    req.Email,
-		Password: string(hashedPassword),
+	now := time.Now()
+	user := models.User{
+		ID:        s.nextID,
+		Name:      req.Name,
+		Email:     req.Email,
+		Password:  string(hashedPassword),
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
-	return &models.UserResponse{
-		ID:       user.ID,
-		Username: user.Username,
-		Email:    user.Email,
-	}, nil
+	s.users[user.ID] = user
+	s.emailMap[user.Email] = user.ID
+	s.nextID++
+
+	return &user, nil
 }
 
-func (s *AuthService) Login(req *models.UserLoginRequest) (*models.LoginResponse, error) {
-	// In a real app, you'd verify credentials against database
-	// For now, just return a mock token
-	if req.Username == "" || req.Password == "" {
-		return nil, errors.New("invalid credentials")
+func (s *AuthService) Login(req *models.LoginRequest) (*models.AuthResponse, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	userID, exists := s.emailMap[req.Email]
+	if !exists {
+		return nil, fmt.Errorf("invalid email")
+	}
+
+	user, exists := s.users[userID]
+	if !exists {
+		return nil, fmt.Errorf("invalid email")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		return nil, fmt.Errorf("invalid email")
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":  1,
-		"username": req.Username,
-		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+		"user_id": user.ID,
+		"email":   user.Email,
+		"name":    user.Name,
+		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	})
 
-	tokenString, err := token.SignedString([]byte("your-secret-key"))
+	tokenString, err := token.SignedString(s.jwtSecret)
 	if err != nil {
 		return nil, err
 	}
 
-	return &models.LoginResponse{
+	return &models.AuthResponse{
+		User:  user,
 		Token: tokenString,
-		User: models.UserResponse{
-			ID:       1,
-			Username: req.Username,
-			Email:    req.Username + "@example.com",
-		},
 	}, nil
 }

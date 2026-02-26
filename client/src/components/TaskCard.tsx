@@ -2,7 +2,7 @@ type TaskCardProps = {
   id: number
   title: string
   description?: string
-  completed: boolean
+  done: boolean
   onToggle: (id: number) => void
   onDelete: (id: number) => void
 }
@@ -11,7 +11,7 @@ const TaskCard = ({
   id,
   title,
   description,
-  completed,
+  done,
   onToggle,
   onDelete,
 }: TaskCardProps) => {
@@ -20,17 +20,17 @@ const TaskCard = ({
       <button
         onClick={() => onToggle(id)}
         className={`mt-0.5 h-5 w-5 flex items-center justify-center rounded-md border text-xs transition ${
-          completed
+          done
             ? 'border-emerald-500 bg-emerald-500 text-slate-950'
             : 'border-slate-600 bg-slate-950 text-slate-500 group-hover:border-emerald-500'
         }`}
       >
-        {completed ? '✓' : ''}
+        {done ? '✓' : ''}
       </button>
       <div className="flex-1 min-w-0">
         <p
           className={`text-sm font-medium ${
-            completed ? 'text-slate-400 line-through' : 'text-slate-100'
+            done ? 'text-slate-400 line-through' : 'text-slate-100'
           }`}
         >
           {title}

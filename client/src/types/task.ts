@@ -2,7 +2,7 @@ export type Task = {
   id: number
   title: string
   description?: string
-  completed: boolean
+  done: boolean
   userId: number
   createdAt: string
 }
@@ -15,5 +15,5 @@ export type CreateTaskRequest = {
 export type UpdateTaskRequest = {
   title?: string
   description?: string
-  completed?: boolean
+  done?: boolean
 }

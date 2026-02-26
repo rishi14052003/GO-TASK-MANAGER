@@ -1,30 +1,28 @@
 package models
 
+import "time"
+
 type User struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"-"`
+	ID        int       `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Password  string    `json:"-"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-type UserRegisterRequest struct {
-	Username string `json:"username"`
+type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-type UserLoginRequest struct {
-	Username string `json:"username"`
+type RegisterRequest struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-type UserResponse struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-}
-
-type LoginResponse struct {
-	Token string       `json:"token"`
-	User  UserResponse `json:"user"`
+type AuthResponse struct {
+	User  User   `json:"user"`
+	Token string `json:"token"`
 }

@@ -1,40 +1,32 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 
 	"task-manager-server/internal/handlers"
+	"task-manager-server/internal/middleware"
 	"task-manager-server/internal/routes"
 	"task-manager-server/internal/services"
 )
 
-type Task struct {
-	ID    int    `json:"id"`
-	Title string `json:"title"`
-	Done  bool   `json:"done"`
-}
-
-func tasksHandler(w http.ResponseWriter, r *http.Request) {
-	tasks := []Task{
-		{ID: 1, Title: "Learn Go", Done: false},
-		{ID: 2, Title: "Build API", Done: false},
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(tasks)
-}
-
 func main() {
-	fmt.Println("Server starting on port 8080...")
-	fmt.Println("Welcome to the Task Manager API!")
+	log.Println("Server starting on port 8080...")
+	log.Println("Welcome to Task Manager API with Authentication!")
+
+	// Initialize services
+	authService := services.NewAuthService()
+	taskService := services.NewTaskService()
 
 	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(services.NewAuthService())
+	authHandler := handlers.NewAuthHandler(authService, taskService)
+	taskHandler := handlers.NewTaskHandler(taskService)
 
 	// Setup routes
-	router := routes.SetupRoutes(authHandler)
+	router := routes.SetupRoutes(authHandler, taskHandler)
 
-	http.ListenAndServe(":8080", router)
+	// Apply CORS middleware
+	finalHandler := middleware.CORSMiddleware(router)
+
+	log.Fatal(http.ListenAndServe(":8080", finalHandler))
 }
