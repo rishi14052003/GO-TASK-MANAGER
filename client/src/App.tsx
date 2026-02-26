@@ -1,24 +1,22 @@
 import type { ReactNode } from 'react'
-import {
-  BrowserRouter,
-  Navigate,
-  Route,
-  Routes,
-} from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import { useAuth } from './context/AuthContext'
 
 type ProtectedRouteProps = {
   children: ReactNode
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const token = typeof window !== 'undefined'
-    ? window.localStorage.getItem('token')
-    : null
+  const { isAuthenticated, isLoading } = useAuth()
 
-  if (!token) {
+  if (isLoading) {
+    return null
+  }
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }
 

@@ -1,23 +1,27 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
+  const { login, error } = useAuth()
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (isSubmitting) return
     setIsSubmitting(true)
 
-    setTimeout(() => {
-      window.localStorage.setItem('token', 'demo-token')
-      setIsSubmitting(false)
-      navigate('/dashboard', { replace: true })
-    }, 2000)
+    login({ email, password })
+      .then(() => {
+        navigate('/dashboard', { replace: true })
+      })
+      .finally(() => {
+        setIsSubmitting(false)
+      })
   }
 
   return (
@@ -126,7 +130,13 @@ const Login = () => {
                 Create one
               </Link>
             </p>
-          </div>
+              </div>
+
+              {error && (
+                <p className="text-sm text-rose-400 bg-rose-950/40 border border-rose-900 rounded-md px-3 py-2">
+                  {error}
+                </p>
+              )}
         </div>
       </div>
     </div>

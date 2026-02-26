@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const Register = () => {
   const [name, setName] = useState('')
@@ -8,16 +9,20 @@ const Register = () => {
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
+  const { register, error } = useAuth()
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (isSubmitting) return
     setIsSubmitting(true)
 
-    setTimeout(() => {
-      setIsSubmitting(false)
-      navigate('/login', { replace: true })
-    }, 2000)
+    register({ name, email, password })
+      .then(() => {
+        navigate('/login', { replace: true })
+      })
+      .finally(() => {
+        setIsSubmitting(false)
+      })
   }
 
   return (
@@ -145,7 +150,13 @@ const Register = () => {
                 Sign in
               </Link>
             </p>
-          </div>
+              </div>
+
+              {error && (
+                <p className="text-sm text-rose-400 bg-rose-950/40 border border-rose-900 rounded-md px-3 py-2">
+                  {error}
+                </p>
+              )}
         </div>
       </div>
     </div>

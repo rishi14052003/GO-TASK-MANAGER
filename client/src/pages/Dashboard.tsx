@@ -1,34 +1,38 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CheckCircle2, Clock3, ListTodo, Percent } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import StatsCard from '../components/StatsCard'
 import TaskCard from '../components/TaskCard'
-
-type Task = {
-  id: number
-  title: string
-  description?: string
-  completed: boolean
-}
+import { useAuth } from '../context/AuthContext'
+import { api } from '../services/api'
+import type { Task as ApiTask } from '../types/task'
 
 const Dashboard = () => {
-  const [tasks, setTasks] = useState<Task[]>([
-    // Sample UI data – will be replaced by API integration
-    {
-      id: 1,
-      title: 'Set up GoTask Pro',
-      description: 'Connect frontend to Go backend and test JWT flow.',
-      completed: true,
-    },
-    {
-      id: 2,
-      title: 'Create first task list',
-      description: 'Add tasks, toggle status, and verify stats updates.',
-      completed: false,
-    },
-  ])
+  const { token, user } = useAuth()
+  const [tasks, setTasks] = useState<ApiTask[]>([])
   const [newTitle, setNewTitle] = useState('')
   const [newDescription, setNewDescription] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!token) {
+      return
+    }
+    setIsLoading(true)
+    setError(null)
+    api
+      .getTasks(token)
+      .then((data) => setTasks(data))
+      .catch((err: unknown) => {
+        const message =
+          err instanceof Error ? err.message : 'Unable to load tasks.'
+        setError(message)
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
+  }, [token])
 
   const stats = useMemo(() => {
     const total = tasks.length
@@ -40,31 +44,59 @@ const Dashboard = () => {
 
   const handleAddTask = () => {
     if (!newTitle.trim()) return
-    const nextId = tasks.length ? Math.max(...tasks.map((t) => t.id)) + 1 : 1
-    const task: Task = {
-      id: nextId,
+    if (!token) return
+    const payload = {
       title: newTitle.trim(),
       description: newDescription.trim() || undefined,
-      completed: false,
     }
-    setTasks((prev) => [task, ...prev])
-    setNewTitle('')
-    setNewDescription('')
+    api
+      .createTask(token, payload)
+      .then((created) => {
+        setTasks((prev) => [created, ...prev])
+        setNewTitle('')
+        setNewDescription('')
+      })
+      .catch((err: unknown) => {
+        const message =
+          err instanceof Error ? err.message : 'Unable to create task.'
+        setError(message)
+      })
   }
 
   const toggleTask = (id: number) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)),
-    )
+    if (!token) return
+    const task = tasks.find((t) => t.id === id)
+    if (!task) return
+    const nextCompleted = !task.completed
+    api
+      .updateTask(token, id, { completed: nextCompleted })
+      .then((updated) => {
+        setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
+      })
+      .catch((err: unknown) => {
+        const message =
+          err instanceof Error ? err.message : 'Unable to update task.'
+        setError(message)
+      })
   }
 
   const deleteTask = (id: number) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id))
+    if (!token) return
+    api
+      .deleteTask(token, id)
+      .then(() => {
+        setTasks((prev) => prev.filter((t) => t.id !== id))
+      })
+      .catch((err: unknown) => {
+        const message =
+          err instanceof Error ? err.message : 'Unable to delete task.'
+        setError(message)
+      })
   }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
-      <Navbar userName="User" />
+      <Navbar userName={user?.name} />
 
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
         {/* Header + stats */}
@@ -123,8 +155,15 @@ const Dashboard = () => {
                 Tasks ({tasks.length})
               </p>
             </div>
+            {error && (
+              <p className="text-sm text-rose-400 bg-rose-950/40 border border-rose-900 rounded-md px-3 py-2 mb-2">
+                {error}
+              </p>
+            )}
             <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
-              {tasks.length === 0 ? (
+              {isLoading ? (
+                <p className="text-sm text-slate-500">Loading tasks…</p>
+              ) : tasks.length === 0 ? (
                 <p className="text-sm text-slate-500">
                   No tasks yet. Add your first task on the right.
                 </p>
