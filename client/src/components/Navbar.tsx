@@ -26,18 +26,25 @@ const Navbar = ({ userName }: NavbarProps) => {
             <p className="text-xs text-slate-400">Task Manager For Intellectual People</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="hidden sm:inline text-sm text-slate-300">
-            Welcome back,{' '}
-            <span className="font-semibold">{userName || 'User'}</span>
-          </span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-slate-800 flex items-center justify-center text-sm font-semibold text-slate-100">
+                {(userName || 'U').slice(0, 1).toUpperCase()}
+              </div>
+              <div className="text-sm text-slate-300">
+                <div className="text-xs">Welcome back,</div>
+                <div className="font-semibold text-slate-100">{userName || 'User'}</div>
+              </div>
+            </div>
+          </div>
           <button
             type="button"
             onClick={handleLogout}
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-emerald-500 hover:text-emerald-400 transition"
+            className="inline-flex items-center gap-2 rounded-lg bg-transparent border border-emerald-600 px-3 py-1.5 text-sm text-emerald-400 hover:bg-emerald-600/10 transition"
           >
-            <LogOut className="h-3.5 w-3.5" />
-            <span>Logout</span>
+            <LogOut className="h-4 w-4" />
+            <span className="font-medium">Logout</span>
           </button>
         </div>
       </div>

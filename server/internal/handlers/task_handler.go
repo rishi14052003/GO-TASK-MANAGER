@@ -24,19 +24,19 @@ func NewTaskHandler(taskService *services.TaskService) *TaskHandler {
 
 func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
 	userID := h.getUserIDFromContext(r)
 	if userID == -1 {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		writeError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	tasks, err := h.taskService.GetTasks(userID)
 	if err != nil {
-		http.Error(w, "Failed to get tasks", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Failed to get tasks")
 		return
 	}
 
@@ -49,25 +49,25 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 
 func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
 	userID := h.getUserIDFromContext(r)
 	if userID == -1 {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		writeError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	id := h.extractTaskID(r)
 	if id == -1 {
-		http.Error(w, "Invalid task ID", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Invalid task ID")
 		return
 	}
 
 	task, err := h.taskService.GetTask(id, userID)
 	if err != nil {
-		http.Error(w, "Task not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "Task not found")
 		return
 	}
 
@@ -78,30 +78,30 @@ func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 
 func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
 	userID := h.getUserIDFromContext(r)
 	if userID == -1 {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		writeError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	var req models.CreateTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	if req.Title == "" {
-		http.Error(w, "Title is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Title is required")
 		return
 	}
 
 	task, err := h.taskService.CreateTask(&req, userID)
 	if err != nil {
-		http.Error(w, "Failed to create task", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Failed to create task")
 		return
 	}
 
@@ -114,44 +114,45 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
 	userID := h.getUserIDFromContext(r)
 	if userID == -1 {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		writeError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	id := h.extractTaskID(r)
 	if id == -1 {
-		http.Error(w, "Invalid task ID", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Invalid task ID")
 		return
 	}
 
-	var req models.CreateTaskRequest
+	var req models.UpdateTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	if req.Title == "" {
-		http.Error(w, "Title is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	// Get existing task
 	existingTask, err := h.taskService.GetTask(id, userID)
 	if err != nil {
-		http.Error(w, "Task not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "Task not found")
 		return
 	}
 
-	// Update task fields
-	existingTask.Title = req.Title
-	existingTask.Description = req.Description
-	existingTask.Done = req.Done
+	// Apply partial updates only for fields that are provided
+	if req.Title != nil {
+		existingTask.Title = *req.Title
+	}
+	if req.Description != nil {
+		existingTask.Description = *req.Description
+	}
+	if req.Done != nil {
+		existingTask.Done = *req.Done
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -161,26 +162,26 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
 	userID := h.getUserIDFromContext(r)
 	if userID == -1 {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		writeError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	id := h.extractTaskID(r)
 	if id == -1 {
-		http.Error(w, "Invalid task ID", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Invalid task ID")
 		return
 	}
 
 	// Check if task exists and belongs to user
 	_, err := h.taskService.GetTask(id, userID)
 	if err != nil {
-		http.Error(w, "Task not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "Task not found")
 		return
 	}
 
