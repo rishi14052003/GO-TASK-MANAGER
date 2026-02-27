@@ -10,12 +10,6 @@ import (
 	godotenv "github.com/joho/godotenv"
 )
 
-// NewDB initializes and returns a MySQL *sql.DB connection using environment variables.
-// Expected env vars:
-//   - DB_HOST (e.g. "localhost:3306")
-//   - DB_USER
-//   - DB_PASS
-//   - DB_NAME
 func NewDB() (*sql.DB, error) {
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
@@ -46,10 +40,8 @@ func NewDB() (*sql.DB, error) {
 }
 
 func getenv(key, fallback string) string {
-	// Check .env file first (already loaded by godotenv)
 	if v := os.Getenv(key); v != "" {
 		return v
 	}
-	// Use fallback if no environment variable is set
 	return fallback
 }

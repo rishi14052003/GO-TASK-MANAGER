@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"task-manager-server/internal/config"
 	"task-manager-server/internal/handlers"
@@ -30,5 +31,11 @@ func main() {
 	// Apply CORS middleware
 	finalHandler := middleware.CORSMiddleware(router)
 
-	log.Fatal(http.ListenAndServe(":8080", finalHandler))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Printf("Starting server on port %s", port)
+	log.Fatal(http.ListenAndServe(":"+port, finalHandler))
 }
