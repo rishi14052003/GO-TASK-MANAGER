@@ -44,11 +44,10 @@ func (s *AuthService) Register(req *models.RegisterRequest) (*models.User, error
 	now := time.Now()
 
 	res, err := s.db.Exec(
-		"INSERT INTO users (name, email, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+		"INSERT INTO users (name, email, password, created_at) VALUES (?, ?, ?, ?)",
 		req.Name,
 		req.Email,
 		string(hashedPassword),
-		now,
 		now,
 	)
 	if err != nil {
@@ -66,7 +65,6 @@ func (s *AuthService) Register(req *models.RegisterRequest) (*models.User, error
 		Email:     req.Email,
 		Password:  string(hashedPassword),
 		CreatedAt: now,
-		UpdatedAt: now,
 	}
 
 	return &user, nil
@@ -77,7 +75,7 @@ func (s *AuthService) Login(req *models.LoginRequest) (*models.AuthResponse, err
 
 	// Fetch user by email
 	err := s.db.QueryRow(
-		"SELECT id, name, email, password, created_at, updated_at FROM users WHERE email = ? LIMIT 1",
+		"SELECT id, name, email, password, created_at FROM users WHERE email = ? LIMIT 1",
 		req.Email,
 	).Scan(
 		&user.ID,
@@ -85,7 +83,6 @@ func (s *AuthService) Login(req *models.LoginRequest) (*models.AuthResponse, err
 		&user.Email,
 		&user.Password,
 		&user.CreatedAt,
-		&user.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("invalid email")

@@ -24,10 +24,7 @@ const Dashboard = () => {
       setIsLoading(true)
       setError(null)
       try {
-        console.log('Dashboard: fetching tasks with token', token)
         const data = await api.getTasks(token)
-        // Backend might sometimes return null or an unexpected shape;
-        // always normalize to an array to keep rendering safe.
         setTasks(Array.isArray(data) ? data : [])
       } catch (err: unknown) {
         const message =

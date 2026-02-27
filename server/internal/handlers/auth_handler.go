@@ -57,26 +57,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID,
-		"email":   user.Email,
-		"name":    user.Name,
-		"exp":     user.CreatedAt.AddDate(0, 0, 1).Unix(),
-	})
-
-	tokenString, err := token.SignedString(h.jwtSecret)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to generate token")
-		return
-	}
-
-	response := models.AuthResponse{
-		User:  *user,
-		Token: tokenString,
-	}
-
 	log.Printf("Register: created user=%d email=%s", user.ID, user.Email)
-	writeJSON(w, http.StatusCreated, response)
+	writeJSON(w, http.StatusCreated, user)
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {

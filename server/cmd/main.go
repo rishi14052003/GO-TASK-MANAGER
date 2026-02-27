@@ -12,18 +12,15 @@ import (
 )
 
 func main() {
-	// Initialize DB
 	db, err := config.NewDB()
 	if err != nil {
 		log.Fatalf("failed to connect DB: %v", err)
 	}
 	defer db.Close()
 
-	// Initialize services (MySQL-backed)
 	authService := services.NewAuthService(db)
 	taskService := services.NewTaskService(db)
 
-	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(authService, taskService)
 	taskHandler := handlers.NewTaskHandler(taskService)
 
