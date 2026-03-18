@@ -2,12 +2,14 @@ import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { Eye, EyeOff, Zap } from 'lucide-react'
 
 const Register = () => {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [localError, setLocalError] = useState<string | null>(null)
   const navigate = useNavigate()
@@ -21,182 +23,129 @@ const Register = () => {
       setLocalError('Passwords do not match')
       return
     }
-
     setIsSubmitting(true)
-
     register({ name, email, password })
-      .then(() => {
-        navigate('/login', { replace: true })
-      })
-      .catch(() => {
-        // register will set shared error in context; we don't need to do more here
-      })
-      .finally(() => {
-        setIsSubmitting(false)
-      })
+      .then(() => navigate('/login', { replace: true }))
+      .catch(() => {})
+      .finally(() => setIsSubmitting(false))
   }
 
+  const displayError = localError || error
+
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
-      <div className="max-w-5xl w-full grid md:grid-cols-2 gap-10 items-center">
-        {/* Hero Section */}
-        <div className="hidden md:block text-slate-50">
-          <h1 className="text-4xl font-bold tracking-tight mb-4">
-            GoTask <span className="text-emerald-400">Pro</span>
-          </h1>
-          <p className="text-slate-300 mb-6">
-            Create your account to start organizing tasks, tracking progress, and
-            keeping your workflow under control.
-          </p>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <span className="mt-1 h-2 w-2 rounded-full bg-emerald-400" />
-              <div>
-                <p className="font-medium text-slate-100">Onboard in seconds</p>
-                <p className="text-sm text-slate-400">
-                  Just your name, email, and password. No extra friction.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="mt-1 h-2 w-2 rounded-full bg-emerald-400" />
-              <div>
-                <p className="font-medium text-slate-100">Personal task space</p>
-                <p className="text-sm text-slate-400">
-                  Your tasks are isolated and secured with JWT authentication.
-                </p>
-              </div>
+    <div className="min-h-screen bg-[#0a0f1e] flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-sm animate-fade-in">
+        {/* Logo */}
+        <div className="flex items-center gap-2 mb-8">
+          <div className="h-8 w-8 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+            <Zap className="h-4 w-4 text-slate-950" />
+          </div>
+          <span className="text-base font-semibold text-slate-100">GoTask Pro</span>
+        </div>
+
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-slate-50">Create your account</h1>
+          <p className="text-sm text-slate-400 mt-1">Start organizing your work in seconds</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-1.5">
+              Full name
+            </label>
+            <input
+              id="name"
+              type="text"
+              required
+              autoComplete="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Jane Doe"
+              className="w-full rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1.5">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1.5">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Create a strong password"
+                className="w-full rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-2.5 pr-10 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Register Form */}
-        <div className="w-full">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl shadow-emerald-500/10 p-8">
-            <div className="mb-6">
-              <p className="md:hidden text-sm font-semibold tracking-wide text-emerald-400 uppercase mb-2">
-                GoTask Pro
-              </p>
-              <h2 className="text-2xl font-semibold text-slate-50 mb-1">
-                Create your account
-              </h2>
-              <p className="text-sm text-slate-400">
-                Start managing your tasks with a clean, focused dashboard.
-              </p>
+          <div>
+            <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-300 mb-1.5">
+              Confirm password
+            </label>
+            <input
+              id="confirm-password"
+              type="password"
+              required
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Repeat your password"
+              className="w-full rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+            />
+          </div>
+
+          {displayError && (
+            <div className="rounded-xl border border-rose-800/50 bg-rose-900/20 px-4 py-3">
+              <p className="text-sm text-rose-400">{displayError}</p>
             </div>
+          )}
 
-            <form className="space-y-5" onSubmit={handleSubmit}>
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-slate-200"
-                >
-                  Name
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  required
-                  autoComplete="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
-                  placeholder="Jane Doe"
-                />
-              </div>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition-all mt-2"
+          >
+            {isSubmitting ? 'Creating account…' : 'Create account'}
+          </button>
+        </form>
 
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-slate-200"
-                >
-                  Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
-                  placeholder="you@example.com"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-slate-200"
-                >
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
-                  placeholder="Create a strong password"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="confirm-password"
-                  className="block text-sm font-medium text-slate-200"
-                >
-                  Confirm password
-                </label>
-                <input
-                  id="confirm-password"
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
-                  placeholder="Repeat your password"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full inline-flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 transition cursor-pointer"
-              >
-                {isSubmitting ? 'Creating account…' : 'Create account'}
-              </button>
-            </form>
-
-            <p className="mt-6 text-center text-sm text-slate-400">
-              Already have an account?{' '}
-              <Link
-                to="/login"
-                className="font-medium text-emerald-400 hover:text-emerald-300"
-              >
-                Sign in
-              </Link>
-            </p>
-              </div>
-
-              {localError && (
-                <p className="text-sm text-rose-400 bg-rose-950/40 border border-rose-900 rounded-md px-3 py-2">
-                  {localError}
-                </p>
-              )}
-              {error && (
-                <p className="text-sm text-rose-400 bg-rose-950/40 border border-rose-900 rounded-md px-3 py-2">
-                  {error}
-                </p>
-              )}
-        </div>
+        <p className="mt-6 text-center text-sm text-slate-500">
+          Already have an account?{' '}
+          <Link to="/login" className="font-medium text-emerald-400 hover:text-emerald-300 transition">
+            Sign in
+          </Link>
+        </p>
       </div>
     </div>
   )
 }
 
 export default Register
-

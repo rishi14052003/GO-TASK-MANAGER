@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut } from 'lucide-react'
+import { LogOut, Zap } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
@@ -14,37 +14,46 @@ const Navbar = ({ userName }: NavbarProps) => {
     logout()
     navigate('/login', { replace: true })
   }
+
+  const initials = (userName || 'U')
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+
   return (
-    <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
-      <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500 text-slate-950">
-            <LayoutDashboard className="h-4 w-4" />
+    <header className="sticky top-0 z-10 border-b border-slate-800/60 bg-[#0a0f1e]/80 backdrop-blur-md">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        {/* Logo */}
+        <div className="flex items-center gap-2.5">
+          <div className="h-7 w-7 rounded-lg bg-emerald-500 flex items-center justify-center shadow-md shadow-emerald-500/30">
+            <Zap className="h-4 w-4 text-slate-950" />
+          </div>
+          <span className="text-sm font-semibold text-slate-100">GoTask Pro</span>
+          <span className="hidden sm:inline-flex items-center rounded-full bg-slate-800 border border-slate-700 px-2 py-0.5 text-xs text-slate-400">
+            Go-powered
           </span>
-          <div>
-            <p className="text-sm font-semibold">Go-Task-Pro</p>
-            <p className="text-xs text-slate-400">Task Manager For Intellectual People</p>
-          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full bg-slate-800 flex items-center justify-center text-sm font-semibold text-slate-100">
-                {(userName || 'U').slice(0, 1).toUpperCase()}
-              </div>
-              <div className="text-sm text-slate-300">
-                <div className="text-xs">Welcome back,</div>
-                <div className="font-semibold text-slate-100">{userName || 'User'}</div>
-              </div>
+
+        {/* Right side */}
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2.5">
+            <div className="h-7 w-7 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-xs font-bold text-slate-950">
+              {initials}
             </div>
+            <span className="text-sm font-medium text-slate-200">{userName || 'User'}</span>
           </div>
+
+          <div className="h-4 w-px bg-slate-700 hidden sm:block" />
+
           <button
             type="button"
             onClick={handleLogout}
-            className="inline-flex items-center gap-2 rounded-lg bg-transparent border border-emerald-600 px-3 py-1.5 text-sm text-emerald-400 hover:bg-emerald-600/10 transition"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all"
           >
-            <LogOut className="h-4 w-4" />
-            <span className="font-medium">Logout</span>
+            <LogOut className="h-3.5 w-3.5" />
+            <span>Logout</span>
           </button>
         </div>
       </div>
