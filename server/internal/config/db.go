@@ -11,7 +11,6 @@ import (
 )
 
 func NewDB() (*sql.DB, error) {
-	// Load .env file
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
 	} else {
@@ -22,10 +21,14 @@ func NewDB() (*sql.DB, error) {
 	user := getenv("DB_USER", "root")
 	pass := getenv("DB_PASS", "")
 	name := getenv("DB_NAME", "task_manager")
+	sslMode := getenv("DB_SSL", "false")
 
 	log.Printf("Connecting to MySQL with: host=%s, user=%s, db=%s, pass_length=%d", host, user, name, len(pass))
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true&charset=utf8mb4&loc=Local", user, pass, host, name)
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s)/%s?parseTime=true&charset=utf8mb4&loc=Local&tls=%s",
+		user, pass, host, name, sslMode,
+	)
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
@@ -33,7 +36,7 @@ func NewDB() (*sql.DB, error) {
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to connect DB: %w", err)
 	}
 
 	return db, nil
