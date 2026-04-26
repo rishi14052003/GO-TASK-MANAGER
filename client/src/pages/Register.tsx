@@ -40,7 +40,7 @@ const Register = () => {
           <div className="h-8 w-8 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
             <Zap className="h-4 w-4 text-slate-950" />
           </div>
-          <span className="text-base font-semibold text-slate-100">GoTask Pro</span>
+          <span className="text-base font-semibold text-slate-100">Fokus</span>
         </div>
 
         <div className="mb-8">

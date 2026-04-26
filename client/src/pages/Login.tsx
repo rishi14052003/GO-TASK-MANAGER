@@ -36,14 +36,14 @@ const Login = () => {
           <div className="h-9 w-9 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
             <Zap className="h-5 w-5 text-slate-950" />
           </div>
-          <span className="text-lg font-semibold text-slate-100">GoTask Pro</span>
+          <span className="text-lg font-semibold text-slate-100">Fokus</span>
         </div>
 
         {/* Center content */}
         <div className="relative space-y-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs font-medium text-emerald-400">Powered by Go — sub-2ms responses</span>
+            <span className="text-xs font-medium text-emerald-400">Stay focused. Make progress.</span>
           </div>
           <h2 className="text-4xl font-bold text-slate-50 leading-tight">
             Your tasks,<br />
@@ -56,9 +56,9 @@ const Login = () => {
           {/* Stats row */}
           <div className="flex gap-8 pt-2">
             {[
-              { value: '<2ms', label: 'API response' },
-              { value: '100%', label: 'Data isolated' },
-              { value: 'JWT', label: 'Secured' },
+              { value: 'Plan', label: 'what matters today' },
+              { value: 'Track', label: 'every task' },
+              { value: 'Finish', label: 'with confidence' },
             ].map(({ value, label }) => (
               <div key={label}>
                 <p className="text-xl font-bold text-slate-100">{value}</p>
@@ -70,7 +70,7 @@ const Login = () => {
 
         {/* Footer */}
         <p className="relative text-xs text-slate-600">
-          Built with Go + React · Fast by design
+          A calmer way to manage your work.
         </p>
       </div>
 
@@ -82,7 +82,7 @@ const Login = () => {
             <div className="h-8 w-8 rounded-xl bg-emerald-500 flex items-center justify-center">
               <Zap className="h-4 w-4 text-slate-950" />
             </div>
-            <span className="text-base font-semibold">GoTask Pro</span>
+            <span className="text-base font-semibold">Fokus</span>
           </div>
 
           <div className="mb-8">

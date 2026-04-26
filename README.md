@@ -1,4 +1,4 @@
-# GoTask Pro
+# Fokus
 
 A full-stack task management application built with **Go** and **React**. Fast by design — the Go backend delivers sub-2ms API responses with true parallel concurrency via goroutines.
 
@@ -105,21 +105,36 @@ JWT_SECRET=your-secret-key-change-in-production
 
 ## Running Locally
 
-### Backend
-```bash
-cd server
-go mod tidy
-go run cmd/main.go
-# → http://localhost:8080
+### 1. Start MySQL (Windows)
+
+If the MySQL service is stopped, open PowerShell **as Administrator** and run:
+
+```powershell
+net start MySQL80
 ```
 
-### Frontend
-```bash
+### 2. Start the backend
+
+In a PowerShell terminal opened at the project root, run:
+
+```powershell
+cd server
+go run cmd/main.go
+```
+
+The backend runs at `http://localhost:8080`.
+
+### 3. Start the frontend
+
+Open a second PowerShell terminal at the project root and run:
+
+```powershell
 cd client
 npm install
 npm run dev
-# → http://localhost:5173
 ```
+
+Run `npm install` the first time (or whenever dependencies need to be installed). The frontend runs at `http://localhost:5173`.
 
 ---
 
@@ -197,8 +212,8 @@ npm run dev
 ```bash
 # Backend — single binary
 cd server
-go build -o gotaskpro cmd/main.go
-./gotaskpro
+go build -o fokus cmd/main.go
+./fokus
 
 # Frontend — static files
 cd client
@@ -231,5 +246,5 @@ Issues: [Report here](https://github.com/rishi14052003/GO-TASK-MANAGER/issues)
 
 <div align="center">
   <strong>Built with Go, MySQL, and React</strong><br/>
-  <sub>© 2026 GoTask Pro</sub>
+  <sub>© 2026 Fokus</sub>
 </div>
