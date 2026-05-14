@@ -3,7 +3,7 @@ import { CheckCircle2, Clock3, ListTodo, TrendingUp, Plus, X, Search } from 'luc
 import Navbar from '../components/Navbar'
 import StatsCard from '../components/StatsCard'
 import TaskCard from '../components/TaskCard'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import { api } from '../services/api'
 import type { Task as ApiTask } from '../types/task'
 
@@ -12,21 +12,32 @@ const Dashboard = () => {
   const [tasks, setTasks] = useState<ApiTask[]>([])
   const [newTitle, setNewTitle] = useState('')
   const [newDescription, setNewDescription] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [loadedToken, setLoadedToken] = useState<string | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'pending' | 'done'>('all')
   const [search, setSearch] = useState('')
+  const isLoading = Boolean(token) && loadedToken !== token
 
   useEffect(() => {
     if (!token) return
-    setIsLoading(true)
-    setError(null)
+    let active = true
     api.getTasks(token)
-      .then((data) => setTasks(Array.isArray(data) ? data : []))
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to load tasks.'))
-      .finally(() => setIsLoading(false))
+      .then((data) => {
+        if (!active) return
+        setTasks(Array.isArray(data) ? data : [])
+        setError(null)
+      })
+      .catch((err: unknown) => {
+        if (active) setError(err instanceof Error ? err.message : 'Unable to load tasks.')
+      })
+      .finally(() => {
+        if (active) setLoadedToken(token)
+      })
+    return () => {
+      active = false
+    }
   }, [token])
 
   const stats = useMemo(() => {
@@ -47,37 +58,26 @@ const Dashboard = () => {
     return task.title.toLowerCase().includes(searchQuery) || (task.description ?? '').toLowerCase().includes(searchQuery)
   }
 
-  const filteredTasks = useMemo(() => {
-    let result = tasks
+  let filteredTasks = tasks
+  if (filter === 'pending') filteredTasks = filteredTasks.filter((task) => !task.done)
+  if (filter === 'done') filteredTasks = filteredTasks.filter((task) => task.done)
+  if (searchQuery) filteredTasks = filteredTasks.filter(matchesSearch)
 
-    if (filter === 'pending') result = result.filter((t) => !t.done)
-    if (filter === 'done') result = result.filter((t) => t.done)
+  const matchingTasks = searchQuery ? tasks.filter(matchesSearch) : tasks
+  const searchCounts = {
+    all: matchingTasks.length,
+    pending: matchingTasks.filter((task) => !task.done).length,
+    done: matchingTasks.filter((task) => task.done).length,
+  }
 
-    if (searchQuery) {
-      result = result.filter(matchesSearch)
-    }
-
-    return result
-  }, [tasks, filter, searchQuery])
-
-  const searchCounts = useMemo(() => {
-    const matchingTasks = searchQuery ? tasks.filter(matchesSearch) : tasks
-
-    return {
-      all: matchingTasks.length,
-      pending: matchingTasks.filter((t) => !t.done).length,
-      done: matchingTasks.filter((t) => t.done).length,
-    }
-  }, [tasks, searchQuery])
-
-  const resultSummary = useMemo(() => {
-    if (!hasActiveFilters) return 'Showing all tasks'
-    if (hasActiveSearch && hasActiveStatusFilter) {
-      return `Showing ${filteredTasks.length} ${filter === 'pending' ? 'pending' : 'completed'} task${filteredTasks.length !== 1 ? 's' : ''} for "${search}"`
-    }
-    if (hasActiveSearch) return `Showing ${filteredTasks.length} task${filteredTasks.length !== 1 ? 's' : ''} for "${search}"`
-    return `Showing ${filteredTasks.length} ${filter === 'pending' ? 'pending' : 'completed'} task${filteredTasks.length !== 1 ? 's' : ''}`
-  }, [filteredTasks.length, filter, hasActiveFilters, hasActiveSearch, hasActiveStatusFilter, search])
+  let resultSummary = 'Showing all tasks'
+  if (hasActiveSearch && hasActiveStatusFilter) {
+    resultSummary = `Showing ${filteredTasks.length} ${filter === 'pending' ? 'pending' : 'completed'} task${filteredTasks.length !== 1 ? 's' : ''} for "${search}"`
+  } else if (hasActiveSearch) {
+    resultSummary = `Showing ${filteredTasks.length} task${filteredTasks.length !== 1 ? 's' : ''} for "${search}"`
+  } else if (hasActiveStatusFilter) {
+    resultSummary = `Showing ${filteredTasks.length} ${filter === 'pending' ? 'pending' : 'completed'} task${filteredTasks.length !== 1 ? 's' : ''}`
+  }
 
   const clearFilters = () => {
     setSearch('')
@@ -119,36 +119,19 @@ const Dashboard = () => {
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to delete task.'))
   }
 
-  const greeting = () => {
-    const h = new Date().getHours()
-    if (h < 12) return 'Good morning'
-    if (h < 17) return 'Good afternoon'
-    return 'Good evening'
-  }
-
-  const todayLabel = new Intl.DateTimeFormat('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date())
-
   const firstName = user?.name?.split(' ')[0] || 'there'
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-slate-50">
+    <div className="min-h-screen bg-fokus-pale text-slate-900">
       <Navbar userName={user?.name} />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 rounded-3xl bg-fokus-dark-orange px-6 py-7 text-white shadow-xl shadow-fokus-dark-orange/10 sm:px-8 sm:py-9 animate-fade-in">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/50 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-3">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              {todayLabel}
-            </div>
-            <p className="text-sm text-slate-500 font-medium">{greeting()},</p>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-50 mt-0.5">{firstName} 👋</h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-sm font-bold uppercase tracking-[0.16em] text-fokus-yellow">Welcome back</p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-white mt-2">{firstName}</h1>
+            <p className="text-base text-white/85 mt-2">
               {stats.pending === 0
                 ? "You're all caught up — nice work!"
                 : `You have ${stats.pending} task${stats.pending !== 1 ? 's' : ''} pending`}
@@ -156,31 +139,31 @@ const Dashboard = () => {
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition-all self-start sm:self-auto"
+            className="inline-flex items-center gap-2 rounded-xl bg-fokus-yellow hover:bg-amber-400 px-5 py-3 text-base font-bold text-slate-950 shadow-lg shadow-black/10 transition-all self-start sm:self-auto"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-5 w-5" />
             New task
           </button>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
-          <StatsCard label="Total" value={stats.total} icon={<ListTodo className="h-4 w-4 text-slate-400" />} />
-          <StatsCard label="Completed" value={stats.completed} accentColorClass="text-emerald-400" iconBg="bg-emerald-500/10" icon={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-          <StatsCard label="Pending" value={stats.pending} accentColorClass="text-amber-400" iconBg="bg-amber-500/10" icon={<Clock3 className="h-4 w-4 text-amber-400" />} />
-          <StatsCard label="Progress" value={`${stats.completionRate}%`} accentColorClass="text-sky-400" iconBg="bg-sky-500/10" icon={<TrendingUp className="h-4 w-4 text-sky-400" />}>
-            <div className="h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-sky-500 to-emerald-500 transition-all duration-500" style={{ width: `${stats.completionRate}%` }} />
+          <StatsCard label="Total" value={stats.total} icon={<ListTodo className="h-4 w-4 text-slate-500" />} />
+          <StatsCard label="Completed" value={stats.completed} accentColorClass="text-fokus-dark-orange" iconBg="bg-fokus-yellow/20" icon={<CheckCircle2 className="h-4 w-4 text-fokus-dark-orange" />} />
+          <StatsCard label="Pending" value={stats.pending} accentColorClass="text-fokus-dark-orange" iconBg="bg-fokus-yellow/20" icon={<Clock3 className="h-4 w-4 text-fokus-dark-orange" />} />
+          <StatsCard label="Progress" value={`${stats.completionRate}%`} accentColorClass="text-fokus-dark-orange" iconBg="bg-fokus-yellow/20" icon={<TrendingUp className="h-4 w-4 text-fokus-dark-orange" />}>
+            <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-fokus-dark-orange to-fokus-yellow transition-all duration-500" style={{ width: `${stats.completionRate}%` }} />
             </div>
           </StatsCard>
         </div>
 
         {/* Add task form */}
         {showForm && (
-          <div className="rounded-2xl border border-emerald-500/20 bg-slate-900/60 p-4 animate-fade-in">
+          <div className="rounded-2xl border border-fokus-dark-orange/20 bg-white p-4 animate-fade-in">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-slate-200">New task</p>
-              <button onClick={() => setShowForm(false)} className="text-slate-500 hover:text-slate-300 transition">
+              <p className="text-base font-semibold text-slate-800">New task</p>
+              <button onClick={() => setShowForm(false)} className="text-slate-500 hover:text-slate-800 transition">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -191,21 +174,21 @@ const Dashboard = () => {
               onChange={(e) => setNewTitle(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="What needs to be done?"
-              className="w-full rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all mb-3"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-fokus-dark-orange/30 focus:border-fokus-dark-orange transition-all mb-3"
             />
             <textarea
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
               rows={2}
               placeholder="Add details or context… (optional)"
-              className="w-full rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all resize-none mb-3"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-fokus-dark-orange/30 focus:border-fokus-dark-orange transition-all resize-none mb-3"
             />
             <div className="flex items-center gap-2 justify-end">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all">Cancel</button>
+              <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl text-sm text-slate-600 hover:text-slate-900 hover:bg-fokus-pale transition-all">Cancel</button>
               <button
                 onClick={handleAddTask}
                 disabled={!newTitle.trim() || isAdding}
-                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold text-slate-950 transition-all"
+                className="px-4 py-2 rounded-xl bg-fokus-dark-orange hover:bg-fokus-dark-orange-hover disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold text-white transition-all"
               >
                 {isAdding ? 'Adding…' : 'Add task'}
               </button>
@@ -215,22 +198,22 @@ const Dashboard = () => {
 
         {/* Task list */}
         <div className="animate-fade-in">
-          <div className="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-3 sm:p-4">
+          <div className="rounded-2xl border border-orange-100 bg-white p-3 sm:p-4">
             <div className="flex flex-col sm:flex-row gap-3">
               {/* Search box */}
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search tasks…"
-                  className="w-full rounded-xl border border-slate-700/80 bg-slate-950/60 pl-9 pr-10 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/40 transition-all"
+                  className="w-full rounded-xl border border-orange-100 bg-fokus-pale pl-10 pr-10 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-fokus-dark-orange/30 focus:border-fokus-dark-orange transition-all"
                 />
                 {search && (
                   <button
                     onClick={() => setSearch('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition"
                     aria-label="Clear search"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -240,13 +223,13 @@ const Dashboard = () => {
 
               <div className="flex items-center gap-2 self-start sm:self-auto">
                 {/* Filter tabs */}
-                <div className="flex gap-1 p-1 rounded-xl bg-slate-950/70 border border-slate-800 self-start">
+                <div className="flex gap-1 p-1 rounded-xl bg-fokus-pale border border-orange-100 self-start">
                   {(['all', 'pending', 'done'] as const).map((f) => (
                     <button
                       key={f}
                       onClick={() => setFilter(f)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
-                        filter === f ? 'bg-slate-700 text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-300'
+                        filter === f ? 'bg-white text-fokus-dark-orange shadow-sm' : 'text-slate-600 hover:text-slate-800'
                       }`}
                     >
                       {f}
@@ -260,7 +243,7 @@ const Dashboard = () => {
                 {hasActiveFilters && (
                   <button
                     onClick={clearFilters}
-                    className="rounded-lg border border-slate-700 bg-slate-900/70 px-2.5 py-1.5 text-[11px] font-medium text-slate-300 hover:border-slate-500 hover:text-slate-100 transition-all"
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:border-fokus-dark-orange/50 hover:text-slate-900 transition-all"
                   >
                     Clear
                   </button>
@@ -269,11 +252,11 @@ const Dashboard = () => {
             </div>
 
             <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <p className="text-xs text-slate-400">{resultSummary}</p>
+              <p className="text-sm text-slate-600">{resultSummary}</p>
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
-                  className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-all self-start"
+                  className="inline-flex items-center gap-1 text-sm font-medium text-fokus-yellow-dark hover:text-fokus-dark-orange transition-all self-start"
                 >
                   <X className="h-3 w-3" />
                   Reset view
@@ -283,8 +266,8 @@ const Dashboard = () => {
           </div>
 
           {error && (
-            <div className="rounded-xl border border-rose-800/50 bg-rose-900/20 px-4 py-3 mb-4">
-              <p className="text-sm text-rose-400">{error}</p>
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 mb-4">
+              <p className="text-sm text-rose-700">{error}</p>
             </div>
           )}
 
@@ -292,15 +275,15 @@ const Dashboard = () => {
             {isLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-14 rounded-xl bg-slate-900/40 border border-slate-800/50 animate-pulse" />
+                  <div key={i} className="h-14 rounded-xl bg-white border border-slate-200 animate-pulse" />
                 ))}
               </div>
             ) : filteredTasks.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/20 py-16 text-center">
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center">
                 <p className="text-3xl mb-3">
                   {search ? '🔍' : filter === 'done' ? '🎯' : filter === 'pending' ? '✅' : '📋'}
                 </p>
-                <p className="text-sm font-medium text-slate-300">
+                <p className="text-base font-medium text-slate-800">
                   {search
                     ? filter === 'all'
                       ? `No tasks match "${search}"`
@@ -309,7 +292,7 @@ const Dashboard = () => {
                     : filter === 'pending' ? 'No pending tasks!'
                     : 'No tasks yet'}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-sm text-slate-500 mt-2">
                   {search
                     ? 'Try a different search term or clear the filters'
                     : filter === 'all' ? 'Hit "New task" to get started'
@@ -319,7 +302,7 @@ const Dashboard = () => {
                 {hasActiveFilters && (
                   <button
                     onClick={clearFilters}
-                    className="mt-4 rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 transition-all"
+                    className="mt-4 rounded-xl border border-orange-100 bg-fokus-pale px-3 py-2 text-xs text-slate-700 hover:bg-orange-50 transition-all"
                   >
                     Clear filters
                   </button>

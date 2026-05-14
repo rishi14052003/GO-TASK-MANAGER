@@ -3,7 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
-import { useAuth } from './context/AuthContext'
+import { useAuth } from './context/useAuth'
 
 type ProtectedRouteProps = {
   children: ReactNode
@@ -14,8 +14,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-200">
-        <p className="text-sm text-slate-400">Checking authentication…</p>
+      <div className="min-h-screen flex items-center justify-center bg-fokus-pale text-slate-900">
+        <p className="text-sm text-slate-600">Checking authentication…</p>
       </div>
     )
   }

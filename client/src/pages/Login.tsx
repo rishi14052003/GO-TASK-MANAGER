@@ -1,8 +1,8 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { Eye, EyeOff, Zap } from 'lucide-react'
+import { useAuth } from '../context/useAuth'
+import { Eye, EyeOff } from 'lucide-react'
 
 const Login = () => {
   const [email, setEmail] = useState('')
@@ -22,138 +22,113 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] flex">
-      {/* Left panel */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-12">
-        {/* Background gradient orbs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-500/10 blur-3xl" />
-          <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full bg-sky-500/8 blur-3xl" />
-        </div>
-
-        {/* Logo */}
-        <div className="relative flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-            <Zap className="h-5 w-5 text-slate-950" />
+    <div className="min-h-screen bg-fokus-pale px-4 py-8 sm:px-8 sm:py-12 flex items-center justify-center">
+      <div className="w-full max-w-5xl overflow-hidden rounded-3xl border border-orange-100 bg-white shadow-2xl shadow-fokus-dark-orange/10 lg:grid lg:grid-cols-2">
+        <section className="relative hidden min-h-[640px] flex-col justify-between overflow-hidden bg-fokus-dark-orange p-10 sm:p-12 lg:flex">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -right-20 -top-24 h-80 w-80 rounded-full border-[36px] border-fokus-yellow/15" />
+            <div className="absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-fokus-yellow/10 blur-2xl" />
           </div>
-          <span className="text-lg font-semibold text-slate-100">Fokus</span>
-        </div>
 
-        {/* Center content */}
-        <div className="relative space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs font-medium text-emerald-400">Stay focused. Make progress.</span>
-          </div>
-          <h2 className="text-4xl font-bold text-slate-50 leading-tight">
-            Your tasks,<br />
-            <span className="text-emerald-400">beautifully</span> organized.
-          </h2>
-          <p className="text-slate-400 leading-relaxed max-w-sm">
-            A focused workspace built for people who ship. No clutter, no noise — just your work, moving forward.
-          </p>
+          <p className="relative text-2xl font-bold tracking-tight text-white">Fokus</p>
 
-          {/* Stats row */}
-          <div className="flex gap-8 pt-2">
-            {[
-              { value: 'Plan', label: 'what matters today' },
-              { value: 'Track', label: 'every task' },
-              { value: 'Finish', label: 'with confidence' },
-            ].map(({ value, label }) => (
-              <div key={label}>
-                <p className="text-xl font-bold text-slate-100">{value}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <p className="relative text-xs text-slate-600">
-          A calmer way to manage your work.
-        </p>
-      </div>
-
-      {/* Right panel — form */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-sm animate-fade-in">
-          {/* Mobile logo */}
-          <div className="flex lg:hidden items-center gap-2 mb-8">
-            <div className="h-8 w-8 rounded-xl bg-emerald-500 flex items-center justify-center">
-              <Zap className="h-4 w-4 text-slate-950" />
+          <div className="relative max-w-md space-y-7">
+            <span className="inline-flex rounded-full bg-fokus-yellow px-4 py-2 text-sm font-bold text-slate-950">
+              Make every day count
+            </span>
+            <h2 className="text-5xl font-bold leading-tight text-white">
+              Your day,<br />
+              in better focus.
+            </h2>
+            <p className="text-lg leading-relaxed text-white/90">
+              Plan your tasks, track your progress, and keep your attention on what matters.
+            </p>
+            <div className="flex flex-wrap gap-3 pt-2 text-base font-semibold text-white">
+              <span className="rounded-full border border-white/30 px-4 py-2">Plan</span>
+              <span className="rounded-full border border-white/30 px-4 py-2">Track</span>
+              <span className="rounded-full border border-white/30 px-4 py-2">Finish</span>
             </div>
-            <span className="text-base font-semibold">Fokus</span>
           </div>
 
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-slate-50">Welcome back</h1>
-            <p className="text-sm text-slate-400 mt-1">Sign in to your workspace</p>
-          </div>
+          <p className="relative text-sm text-white/80">Small steps add up. Make today count.</p>
+        </section>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1.5">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
-              />
+        <section className="flex min-h-[600px] items-center justify-center px-6 py-10 sm:px-12 lg:min-h-[640px] lg:px-14">
+          <div className="w-full max-w-md animate-fade-in">
+            <p className="mb-10 text-2xl font-bold tracking-tight text-fokus-dark-orange lg:hidden">Fokus</p>
+
+            <div className="mb-10">
+              <p className="mb-3 text-sm font-bold uppercase tracking-[0.16em] text-fokus-dark-orange">Welcome back</p>
+              <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Sign in to your account</h1>
+              <p className="mt-3 text-base text-slate-600">Pick up where you left off.</p>
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1.5">
-                Password
-              </label>
-              <div className="relative">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="email" className="mb-2 block text-base font-semibold text-slate-700">
+                  Email
+                </label>
                 <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
+                  id="email"
+                  type="email"
                   required
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-2.5 pr-10 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full rounded-xl border border-slate-200 bg-fokus-pale px-4 py-3.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-fokus-dark-orange focus:outline-none focus:ring-2 focus:ring-fokus-dark-orange/25 transition-all"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
               </div>
-            </div>
 
-            {error && (
-              <div className="rounded-xl border border-rose-800/50 bg-rose-900/20 px-4 py-3">
-                <p className="text-sm text-rose-400">{error}</p>
+              <div>
+                <label htmlFor="password" className="mb-2 block text-base font-semibold text-slate-700">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="w-full rounded-xl border border-slate-200 bg-fokus-pale px-4 py-3.5 pr-12 text-base text-slate-900 placeholder:text-slate-400 focus:border-fokus-dark-orange focus:outline-none focus:ring-2 focus:ring-fokus-dark-orange/25 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-500 hover:bg-orange-100 hover:text-slate-900 transition"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
-            )}
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition-all mt-2"
-            >
-              {isSubmitting ? 'Signing in…' : 'Sign in'}
-            </button>
-          </form>
+              {error && (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+                  <p className="text-base text-rose-700">{error}</p>
+                </div>
+              )}
 
-          <p className="mt-6 text-center text-sm text-slate-500">
-            No account?{' '}
-            <Link to="/register" className="font-medium text-emerald-400 hover:text-emerald-300 transition">
-              Create one free
-            </Link>
-          </p>
-        </div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="mt-2 w-full rounded-xl bg-fokus-dark-orange px-4 py-3.5 text-base font-bold text-white shadow-lg shadow-fokus-dark-orange/20 transition-all hover:bg-fokus-dark-orange-hover disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSubmitting ? 'Signing in…' : 'Sign in'}
+              </button>
+            </form>
+
+            <p className="mt-8 text-center text-base text-slate-600">
+              No account?{' '}
+              <Link to="/register" className="font-semibold text-fokus-dark-orange hover:text-fokus-dark-orange-hover transition">
+                Create one free
+              </Link>
+            </p>
+          </div>
+        </section>
       </div>
     </div>
   )
