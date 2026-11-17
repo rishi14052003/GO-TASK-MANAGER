@@ -30,10 +30,7 @@ const Navbar = ({ userName }: NavbarProps) => {
           <div className="h-7 w-7 rounded-lg bg-emerald-500 flex items-center justify-center shadow-md shadow-emerald-500/30">
             <Zap className="h-4 w-4 text-slate-950" />
           </div>
-          <span className="text-sm font-semibold text-slate-100">GoTask Pro</span>
-          <span className="hidden sm:inline-flex items-center rounded-full bg-slate-800 border border-slate-700 px-2 py-0.5 text-xs text-slate-400">
-            Go-powered
-          </span>
+          <span className="text-sm font-semibold text-slate-100">Fokus</span>
         </div>
 
         {/* Right side */}
