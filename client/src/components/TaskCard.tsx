@@ -1,43 +1,47 @@
 import { useState } from 'react'
 import { Trash2, ChevronDown } from 'lucide-react'
+import type { Priority } from '../types/task'
 
 type TaskCardProps = {
   id: number
   title: string
   description?: string
   done: boolean
+  priority: Priority
   createdAt?: string
   onToggle: (id: number) => void
   onDelete: (id: number) => void
 }
 
-const TaskCard = ({ id, title, description, done, createdAt, onToggle, onDelete }: TaskCardProps) => {
+const priorityConfig: Record<Priority, { label: string; className: string }> = {
+  high:   { label: 'High',   className: 'bg-rose-500/10 text-rose-400 border-rose-500/20' },
+  medium: { label: 'Medium', className: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+  low:    { label: 'Low',    className: 'bg-sky-500/10 text-sky-400 border-sky-500/20' },
+}
+
+const TaskCard = ({ id, title, description, done, priority, createdAt, onToggle, onDelete }: TaskCardProps) => {
   const [expanded, setExpanded] = useState(false)
 
   const formattedDate = createdAt
     ? new Date(createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : null
 
+  const p = priorityConfig[priority] ?? priorityConfig.medium
+
   return (
-    <div
-      className={`group rounded-xl border transition-all duration-150 ${
-        done
-          ? 'border-orange-200 bg-orange-50/50'
-          : 'border-orange-100 bg-white hover:border-fokus-dark-orange/40'
-      }`}
-    >
-      <div className="flex items-start gap-4 px-5 py-4">
+    <div className={`group rounded-xl border transition-all duration-150 ${
+      done ? 'border-slate-800/50 bg-slate-900/20' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
+    }`}>
+      <div className="flex items-start gap-3 px-4 py-3">
         {/* Checkbox */}
         <button
           onClick={() => onToggle(id)}
-          className={`mt-0.5 flex-shrink-0 h-6 w-6 rounded-md border-2 flex items-center justify-center transition-all ${
-            done
-              ? 'border-fokus-yellow bg-fokus-yellow'
-              : 'border-slate-300 bg-transparent hover:border-fokus-dark-orange'
+          className={`mt-0.5 flex-shrink-0 h-5 w-5 rounded-md border-2 flex items-center justify-center transition-all ${
+            done ? 'border-emerald-500 bg-emerald-500' : 'border-slate-600 bg-transparent hover:border-emerald-400'
           }`}
         >
           {done && (
-            <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none">
+            <svg className="h-3 w-3 text-slate-950" viewBox="0 0 12 12" fill="none">
               <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}
@@ -45,17 +49,22 @@ const TaskCard = ({ id, title, description, done, createdAt, onToggle, onDelete 
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <p className={`text-base font-medium leading-snug transition-all ${done ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
-            {title}
-          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className={`text-sm font-medium leading-snug transition-all ${done ? 'text-slate-500 line-through' : 'text-slate-100'}`}>
+              {title}
+            </p>
+            <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-xs font-medium ${p.className}`}>
+              {p.label}
+            </span>
+          </div>
           {description && !expanded && (
-            <p className="mt-1 text-sm text-slate-500 truncate">{description}</p>
+            <p className="mt-0.5 text-xs text-slate-500 truncate">{description}</p>
           )}
           {description && expanded && (
-            <p className="mt-2 text-sm text-slate-600 leading-relaxed animate-fade-in">{description}</p>
+            <p className="mt-1.5 text-xs text-slate-400 leading-relaxed animate-fade-in">{description}</p>
           )}
           {formattedDate && (
-            <p className="mt-1 text-sm text-slate-500">{formattedDate}</p>
+            <p className="mt-1 text-xs text-slate-600">{formattedDate}</p>
           )}
         </div>
 
@@ -64,14 +73,14 @@ const TaskCard = ({ id, title, description, done, createdAt, onToggle, onDelete 
           {description && (
             <button
               onClick={() => setExpanded(!expanded)}
-              className="p-1 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-fokus-pale transition-all"
+              className="p-1 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-all"
             >
               <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
             </button>
           )}
           <button
             onClick={() => onDelete(id)}
-            className="p-1 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 transition-all"
+            className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-900/20 transition-all"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>

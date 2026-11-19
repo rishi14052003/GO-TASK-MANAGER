@@ -7,6 +7,7 @@ type Task struct {
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	Done        bool      `json:"done"`
+	Priority    string    `json:"priority"` // "low" | "medium" | "high"
 	UserID      int       `json:"userId"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
@@ -16,12 +17,12 @@ type CreateTaskRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Done        bool   `json:"done"`
+	Priority    string `json:"priority"`
 }
 
-// UpdateTaskRequest allows partial updates of a task. Fields are pointers
-// so we can distinguish between "not provided" and zero values.
 type UpdateTaskRequest struct {
 	Title       *string `json:"title,omitempty"`
 	Description *string `json:"description,omitempty"`
 	Done        *bool   `json:"done,omitempty"`
+	Priority    *string `json:"priority,omitempty"`
 }
