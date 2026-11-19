@@ -1,6 +1,6 @@
-import { LogOut, Zap } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 
 type NavbarProps = {
   userName?: string
@@ -23,33 +23,27 @@ const Navbar = ({ userName }: NavbarProps) => {
     .toUpperCase()
 
   return (
-    <header className="sticky top-0 z-10 border-b border-slate-800/60 bg-[#0a0f1e]/80 backdrop-blur-md">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center gap-2.5">
-          <div className="h-7 w-7 rounded-lg bg-emerald-500 flex items-center justify-center shadow-md shadow-emerald-500/30">
-            <Zap className="h-4 w-4 text-slate-950" />
-          </div>
-          <span className="text-sm font-semibold text-slate-100">Fokus</span>
-        </div>
+    <header className="sticky top-0 z-10 border-b border-white/10 bg-fokus-dark-orange">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <span className="text-xl font-bold tracking-tight text-white">Fokus</span>
 
         {/* Right side */}
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-2.5">
-            <div className="h-7 w-7 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-xs font-bold text-slate-950">
+            <div className="h-8 w-8 rounded-full bg-fokus-yellow flex items-center justify-center text-sm font-bold text-slate-950">
               {initials}
             </div>
-            <span className="text-sm font-medium text-slate-200">{userName || 'User'}</span>
+            <span className="text-base font-medium text-white">{userName || 'User'}</span>
           </div>
 
-          <div className="h-4 w-px bg-slate-700 hidden sm:block" />
+          <div className="h-5 w-px bg-white/30 hidden sm:block" />
 
           <button
             type="button"
             onClick={handleLogout}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-base text-white/90 hover:text-white hover:bg-white/10 transition-all"
           >
-            <LogOut className="h-3.5 w-3.5" />
+            <LogOut className="h-4 w-4" />
             <span>Logout</span>
           </button>
         </div>

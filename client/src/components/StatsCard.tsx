@@ -12,22 +12,22 @@ type StatsCardProps = {
 const StatsCard = ({
   label,
   value,
-  accentColorClass = 'text-slate-50',
+  accentColorClass = 'text-slate-900',
   icon,
-  iconBg = 'bg-slate-800',
+  iconBg = 'bg-fokus-pale',
   children,
 }: StatsCardProps) => {
   return (
-    <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 flex flex-col gap-3 hover:border-slate-700/80 transition-all">
+    <div className="rounded-2xl border border-orange-100 bg-white p-6 flex flex-col gap-4 hover:border-orange-200 transition-all">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{label}</p>
+        <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">{label}</p>
         {icon && (
           <div className={`h-8 w-8 rounded-xl ${iconBg} flex items-center justify-center`}>
             {icon}
           </div>
         )}
       </div>
-      <p className={`text-3xl font-bold tracking-tight ${accentColorClass}`}>{value}</p>
+      <p className={`text-4xl font-bold tracking-tight ${accentColorClass}`}>{value}</p>
       {children}
     </div>
   )

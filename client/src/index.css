@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@theme {
+  --color-fokus-pale: #FFF7ED;
+  --color-fokus-yellow: #FFAB00;
+  --color-fokus-yellow-dark: #A85D00;
+  --color-fokus-dark-orange: #C2410C;
+  --color-fokus-dark-orange-hover: #9A3412;
+}
+
 html,
 body,
 #root {
@@ -7,11 +15,11 @@ body,
 }
 
 body {
-  background-color: #020617; /* slate-950 */
-  color: #f9fafb; /* slate-50 */
+  background-color: #FFF7ED;
+  color: #172033;
   -webkit-font-smoothing: antialiased;
 }
 
 * {
-  border-color: #1e293b; /* slate-800 */
+  border-color: #F1D9C6;
 }
