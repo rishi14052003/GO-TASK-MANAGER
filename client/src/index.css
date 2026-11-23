@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  --font-sans: Arial, Helvetica, sans-serif;
   --color-fokus-pale: #FFF7ED;
   --color-fokus-yellow: #FFAB00;
   --color-fokus-yellow-dark: #A85D00;
