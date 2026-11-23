@@ -77,4 +77,3 @@ func (r *userRepository) GetByID(id int) (*models.User, error) {
 
 	return &u, nil
 }
-

@@ -25,10 +25,8 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authService, taskService)
 	taskHandler := handlers.NewTaskHandler(taskService)
 
-	// Setup routes
 	router := routes.SetupRoutes(authHandler, taskHandler)
 
-	// Apply CORS middleware
 	finalHandler := middleware.CORSMiddleware(router)
 
 	port := os.Getenv("PORT")

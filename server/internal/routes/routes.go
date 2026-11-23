@@ -10,11 +10,9 @@ import (
 func SetupRoutes(authHandler *handlers.AuthHandler, taskHandler *handlers.TaskHandler) http.Handler {
 	mux := http.NewServeMux()
 
-	// Auth routes (no auth middleware needed)
 	mux.HandleFunc("/api/register", authHandler.Register)
 	mux.HandleFunc("/api/login", authHandler.Login)
 
-	// Task routes (protected with auth middleware)
 	taskMux := http.NewServeMux()
 	taskMux.HandleFunc("/api/tasks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -37,10 +35,8 @@ func SetupRoutes(authHandler *handlers.AuthHandler, taskHandler *handlers.TaskHa
 		}
 	})
 
-	// Mount protected task handlers under the main mux
 	mux.Handle("/api/tasks", middleware.AuthMiddleware(taskMux))
 	mux.Handle("/api/tasks/", middleware.AuthMiddleware(taskMux))
 
-	// Apply CORS middleware to the entire mux
 	return middleware.CORSMiddleware(mux)
 }

@@ -1,24 +1,24 @@
 # Fokus
 
-A full-stack task management application built with **Go** and **React**. Fast by design — the Go backend delivers sub-2ms API responses with true parallel concurrency via goroutines.
+A full-stack task management application built with **Go** and **React**. Fast by design - the Go backend delivers sub-2ms API responses with true parallel concurrency via goroutines.
 
 ---
 
 ## Tech Stack
 
 ### Backend
-- **Go 1.25+** — high-performance, compiled language
-- **MySQL 8.0** — relational database
-- **gorilla/mux** — HTTP router
-- **golang-jwt/jwt v5** — JWT authentication
-- **bcrypt** — password hashing
+- **Go 1.25+** - high-performance, compiled language
+- **MySQL 8.0** - relational database
+- **gorilla/mux** - HTTP router
+- **golang-jwt/jwt v5** - JWT authentication
+- **bcrypt** - password hashing
 
 ### Frontend
 - **React 18** + **TypeScript**
-- **Vite** — build tool
-- **Tailwind CSS** — utility-first styling
-- **React Router v6** — client-side routing
-- **Lucide React** — icons
+- **Vite** - build tool
+- **Tailwind CSS** - utility-first styling
+- **React Router v6** - client-side routing
+- **Lucide React** - icons
 
 ---
 
@@ -190,7 +190,7 @@ Run `npm install` the first time (or whenever dependencies need to be installed)
 - Auth via **JWT** (24hr expiry)
 - All task routes protected by auth middleware
 - Users can only access their own tasks
-- Parameterized SQL queries — no injection risk
+- Parameterized SQL queries - no injection risk
 - CORS configured for `localhost:5173`
 
 ---
@@ -210,12 +210,12 @@ Run `npm install` the first time (or whenever dependencies need to be installed)
 ## Build for Production
 
 ```bash
-# Backend — single binary
+# Backend - single binary
 cd server
 go build -o fokus cmd/main.go
 ./fokus
 
-# Frontend — static files
+# Frontend - static files
 cd client
 npm run build
 # output in client/dist/

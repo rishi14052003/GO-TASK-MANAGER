@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { api } from '../services/api'
 import type { User, LoginRequest, RegisterRequest } from '../types/user'
 import { AUTH_STORAGE_KEY } from './constants'
@@ -39,7 +33,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setToken(nextToken)
     window.localStorage.setItem(
       AUTH_STORAGE_KEY,
-      JSON.stringify({ user: nextUser, token: nextToken }),
+      JSON.stringify({ user: nextUser, token: nextToken })
     )
   }, [])
 
@@ -57,37 +51,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const { user: loggedInUser, token: jwt } = await api.login(payload)
         persist(loggedInUser, jwt)
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Unable to login. Please try again.'
+        const message = err instanceof Error ? err.message : 'Unable to login. Please try again.'
         setError(message)
         throw err
       } finally {
         setIsLoading(false)
       }
     },
-    [persist],
+    [persist]
   )
 
-  const register = useCallback(
-    async (payload: RegisterRequest) => {
-      setError(null)
-      setIsLoading(true)
-      try {
-        await api.register(payload)
-        // Do not persist auth on register; user must log in explicitly
-      } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : 'Unable to create account. Please try again.'
-        setError(message)
-        throw err
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [],
-  )
+  const register = useCallback(async (payload: RegisterRequest) => {
+    setError(null)
+    setIsLoading(true)
+    try {
+      await api.register(payload)
+      // Do not persist auth on register; user must log in explicitly
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to create account. Please try again.'
+      setError(message)
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
   const logout = useCallback(() => {
     clear()
@@ -104,9 +92,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       register,
       logout,
     }),
-    [user, token, isLoading, error, login, register, logout],
+    [user, token, isLoading, error, login, register, logout]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
-

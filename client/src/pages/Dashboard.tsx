@@ -1,5 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Activity, AlertCircle, Calendar, CalendarClock, Check, ChevronDown, Columns2, LayoutList, Plus, Search, SlidersHorizontal, Sun, X } from 'lucide-react'
+import {
+  Activity,
+  AlertCircle,
+  Calendar,
+  CalendarClock,
+  Check,
+  ChevronDown,
+  Columns2,
+  LayoutList,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  Sun,
+  X,
+} from 'lucide-react'
 import './Dashboard.css'
 import Navbar from '../components/Navbar'
 import StatsCard from '../components/StatsCard'
@@ -37,15 +51,22 @@ const Dashboard = () => {
   const [view, setView] = useState<'list' | 'board'>('list')
   const [deadline, setDeadline] = useState<Deadline>('all')
   const now = new Date()
-  const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-')
+  const today = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-')
 
   useEffect(() => {
     if (!token) return
     setIsLoading(true)
     setError(null)
-    api.getTasks(token)
+    api
+      .getTasks(token)
       .then((data) => setTasks(Array.isArray(data) ? data : []))
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to load tasks.'))
+      .catch((err: unknown) =>
+        setError(err instanceof Error ? err.message : 'Unable to load tasks.')
+      )
       .finally(() => setIsLoading(false))
   }, [token])
 
@@ -57,17 +78,27 @@ const Dashboard = () => {
     return { total, completed, pending, completionRate }
   }, [tasks])
 
-  const tasksInFilter = useMemo(() => tasks.filter((task) => {
-    const matchesStatus = filter === 'all' || task.done === (filter === 'done')
-    const matchesPriority = priorityFilter === 'all' || (task.priority ?? 'medium') === priorityFilter
-    return matchesStatus && matchesPriority && (deadline === 'all' || deadlineOf(task, today) === deadline)
-  }), [tasks, filter, priorityFilter, deadline, today])
+  const tasksInFilter = useMemo(
+    () =>
+      tasks.filter((task) => {
+        const matchesStatus = filter === 'all' || task.done === (filter === 'done')
+        const matchesPriority =
+          priorityFilter === 'all' || (task.priority ?? 'medium') === priorityFilter
+        return (
+          matchesStatus &&
+          matchesPriority &&
+          (deadline === 'all' || deadlineOf(task, today) === deadline)
+        )
+      }),
+    [tasks, filter, priorityFilter, deadline, today]
+  )
 
   const filteredTasks = useMemo(() => {
     if (!searchTerm) return tasksInFilter
     const query = searchTerm.toLowerCase()
-    return tasksInFilter.filter((task) =>
-      task.title.toLowerCase().includes(query) || task.description?.toLowerCase().includes(query)
+    return tasksInFilter.filter(
+      (task) =>
+        task.title.toLowerCase().includes(query) || task.description?.toLowerCase().includes(query)
     )
   }, [tasksInFilter, searchTerm])
 
@@ -76,12 +107,13 @@ const Dashboard = () => {
   const handleAddTask = () => {
     if (!newTitle.trim() || !token || isAdding) return
     setIsAdding(true)
-    api.createTask(token, {
-      title: newTitle.trim(),
-      description: newDescription.trim() || undefined,
-      priority: newPriority,
-      dueDate: newDueDate || undefined,
-    })
+    api
+      .createTask(token, {
+        title: newTitle.trim(),
+        description: newDescription.trim() || undefined,
+        priority: newPriority,
+        dueDate: newDueDate || undefined,
+      })
       .then((created) => {
         setTasks((prev) => [created, ...prev])
         setNewTitle('')
@@ -90,7 +122,9 @@ const Dashboard = () => {
         setNewPriority('medium')
         setShowForm(false)
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to create task.'))
+      .catch((err: unknown) =>
+        setError(err instanceof Error ? err.message : 'Unable to create task.')
+      )
       .finally(() => setIsAdding(false))
   }
 
@@ -98,16 +132,22 @@ const Dashboard = () => {
     if (!token) return
     const task = tasks.find((t) => t.id === id)
     if (!task) return
-    api.updateTask(token, id, { done: !task.done })
+    api
+      .updateTask(token, id, { done: !task.done })
       .then((updated) => setTasks((prev) => prev.map((t) => (t.id === id ? updated : t))))
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to update task.'))
+      .catch((err: unknown) =>
+        setError(err instanceof Error ? err.message : 'Unable to update task.')
+      )
   }
 
   const deleteTask = (id: number) => {
     if (!token) return
-    api.deleteTask(token, id)
+    api
+      .deleteTask(token, id)
       .then(() => setTasks((prev) => prev.filter((t) => t.id !== id)))
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to delete task.'))
+      .catch((err: unknown) =>
+        setError(err instanceof Error ? err.message : 'Unable to delete task.')
+      )
   }
 
   function pickDeadline(next: Exclude<Deadline, 'all'>) {
@@ -115,86 +155,301 @@ const Dashboard = () => {
     setFilter('all')
   }
 
-  const renderTask = (task: ApiTask) => <TaskCard key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
+  const renderTask = (task: ApiTask) => (
+    <TaskCard key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
+  )
   return (
     <div className="workspace">
       <Navbar userName={user?.name} />
       <main className="workspace-wrap work-main">
         <div className="work-header">
           <div>
-            <p className="work-date"><Calendar size={14} />{now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-            <h1>My workspace<span>.</span></h1>
+            <p className="work-date">
+              <Calendar size={14} />
+              {now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </p>
+            <h1>
+              My workspace<span>.</span>
+            </h1>
           </div>
-          <button className="add-button" onClick={() => setShowForm(true)}><Plus size={18} />New task</button>
+          <button className="add-button" onClick={() => setShowForm(true)}>
+            <Plus size={18} />
+            New task
+          </button>
         </div>
         <section className="overview" aria-label="Workspace overview">
           <div className="progress-panel">
-            <div className="contours" aria-hidden="true">{Array.from({length: 24}, (_, i) =>
-              <i key={i} style={{ width: 104 + i * 19, height: 62 + i * 14 }} />)}</div>
+            <div className="contours" aria-hidden="true">
+              {Array.from({ length: 24 }, (_, i) => (
+                <i key={i} style={{ width: 104 + i * 19, height: 62 + i * 14 }} />
+              ))}
+            </div>
             <div className="progress-content">
-              <h2><Activity size={17} />Completion rate</h2>
-              <strong>{stats.completionRate}<small>%</small></strong>
-              <div className="progress-track" role="progressbar" aria-label="Task completion" aria-valuenow={stats.completionRate} aria-valuemin={0} aria-valuemax={100}>
-                <i style={{width: `${stats.completionRate}%`}} />
+              <h2>
+                <Activity size={17} />
+                Completion rate
+              </h2>
+              <strong>
+                {stats.completionRate}
+                <small>%</small>
+              </strong>
+              <div
+                className="progress-track"
+                role="progressbar"
+                aria-label="Task completion"
+                aria-valuenow={stats.completionRate}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <i style={{ width: `${stats.completionRate}%` }} />
               </div>
-              <p>{stats.completed} of {stats.total} tasks complete</p>
+              <p>
+                {stats.completed} of {stats.total} tasks complete
+              </p>
             </div>
           </div>
           <div className="agenda">
-            <h2><CalendarClock size={17} />Deadlines</h2>
-            {(['overdue','today','upcoming'] as const).map(key => (
-              <StatsCard key={key} label={deadlineLabels[key]} value={tasks.filter(task => deadlineOf(task, today) === key).length}
+            <h2>
+              <CalendarClock size={17} />
+              Deadlines
+            </h2>
+            {(['overdue', 'today', 'upcoming'] as const).map((key) => (
+              <StatsCard
+                key={key}
+                label={deadlineLabels[key]}
+                value={tasks.filter((task) => deadlineOf(task, today) === key).length}
                 icon={key === 'overdue' ? AlertCircle : key === 'today' ? Sun : Calendar}
-                selected={deadline === key} onClick={() => pickDeadline(key)} />
+                selected={deadline === key}
+                onClick={() => pickDeadline(key)}
+              />
             ))}
           </div>
         </section>
         <section className="tasks-section" aria-label="My tasks">
-          <div className="tasks-header"><h2>My tasks <span>{stats.total}</span></h2>
+          <div className="tasks-header">
+            <h2>
+              My tasks <span>{stats.total}</span>
+            </h2>
             <div className="view-switch" aria-label="Task view">
-              <button aria-pressed={view === 'list'} onClick={() => setView('list')}><LayoutList size={15} />List</button>
-              <button aria-pressed={view === 'board'} onClick={() => setView('board')}><Columns2 size={15} />Board</button>
+              <button aria-pressed={view === 'list'} onClick={() => setView('list')}>
+                <LayoutList size={15} />
+                List
+              </button>
+              <button aria-pressed={view === 'board'} onClick={() => setView('board')}>
+                <Columns2 size={15} />
+                Board
+              </button>
             </div>
           </div>
           <div className="task-toolbar">
-            <div className="search-field"><Search size={16} /><input ref={searchInput} aria-label="Search tasks" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search tasks…" />
-              {search && <button aria-label="Clear search" onClick={() => {setSearch(''); searchInput.current?.focus()}}><X size={15}/></button>}
+            <div className="search-field">
+              <Search size={16} />
+              <input
+                ref={searchInput}
+                aria-label="Search tasks"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search tasks…"
+              />
+              {search && (
+                <button
+                  aria-label="Clear search"
+                  onClick={() => {
+                    setSearch('')
+                    searchInput.current?.focus()
+                  }}
+                >
+                  <X size={15} />
+                </button>
+              )}
             </div>
             <div className="status-filters" aria-label="Task status">
-              {(['all','pending','done'] as const).map(f => <button key={f} aria-pressed={filter === f} onClick={() => setFilter(f)}>{f} <span>{f === 'all' ? stats.total : f === 'pending' ? stats.pending : stats.completed}</span></button>)}
+              {(['all', 'pending', 'done'] as const).map((f) => (
+                <button key={f} aria-pressed={filter === f} onClick={() => setFilter(f)}>
+                  {f}{' '}
+                  <span>
+                    {f === 'all' ? stats.total : f === 'pending' ? stats.pending : stats.completed}
+                  </span>
+                </button>
+              ))}
             </div>
-            <label className="priority-select"><SlidersHorizontal size={14} /><select aria-label="Filter by priority" value={priorityFilter} onChange={e => setPriorityFilter(e.target.value as Priority | 'all')}>
-              <option value="all">All priorities</option>{priorities.map(p => <option value={p} key={p}>{p[0].toUpperCase() + p.slice(1)}</option>)}
-            </select><ChevronDown size={13}/></label>
+            <label className="priority-select">
+              <SlidersHorizontal size={14} />
+              <select
+                aria-label="Filter by priority"
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value as Priority | 'all')}
+              >
+                <option value="all">All priorities</option>
+                {priorities.map((p) => (
+                  <option value={p} key={p}>
+                    {p[0].toUpperCase() + p.slice(1)}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={13} />
+            </label>
           </div>
-          {deadline !== 'all' && <button className="deadline-chip" onClick={() => setDeadline('all')} aria-label={`Clear ${deadlineLabels[deadline]} filter`}>{deadlineLabels[deadline]} <X size={13}/></button>}
-          {search && !isLoading && <p className="search-count" role="status">{filteredTasks.length === 0 ? 'No tasks match your search' : `${filteredTasks.length} task${filteredTasks.length === 1 ? '' : 's'} found`}</p>}
-          {error && <p role="alert" className="work-error">{error}</p>}
-          {isLoading ? <p className="blank-state">Loading tasks…</p> : filteredTasks.length === 0 ? (
-            <div className="blank-state"><strong>{searchCausedEmpty ? `🔍 No tasks match "${searchTerm}"` : deadline !== 'all' || priorityFilter !== 'all' ? 'No tasks in this view' : filter === 'done' ? 'No completed tasks yet' : filter === 'pending' ? 'No pending tasks!' : 'No tasks yet'}</strong>
-              <p>{searchCausedEmpty ? 'Try a different search term' : deadline !== 'all' || priorityFilter !== 'all' ? 'Try a different filter.' : filter === 'pending' ? "You're all caught up 🎉" : filter === 'done' ? 'Complete some tasks to see them here' : 'Hit "New task" to get started'}</p>
+          {deadline !== 'all' && (
+            <button
+              className="deadline-chip"
+              onClick={() => setDeadline('all')}
+              aria-label={`Clear ${deadlineLabels[deadline]} filter`}
+            >
+              {deadlineLabels[deadline]} <X size={13} />
+            </button>
+          )}
+          {search && !isLoading && (
+            <p className="search-count" role="status">
+              {filteredTasks.length === 0
+                ? 'No tasks match your search'
+                : `${filteredTasks.length} task${filteredTasks.length === 1 ? '' : 's'} found`}
+            </p>
+          )}
+          {error && (
+            <p role="alert" className="work-error">
+              {error}
+            </p>
+          )}
+          {isLoading ? (
+            <p className="blank-state">Loading tasks…</p>
+          ) : filteredTasks.length === 0 ? (
+            <div className="blank-state">
+              <strong>
+                {searchCausedEmpty
+                  ? `🔍 No tasks match "${searchTerm}"`
+                  : deadline !== 'all' || priorityFilter !== 'all'
+                    ? 'No tasks in this view'
+                    : filter === 'done'
+                      ? 'No completed tasks yet'
+                      : filter === 'pending'
+                        ? 'No pending tasks!'
+                        : 'No tasks yet'}
+              </strong>
+              <p>
+                {searchCausedEmpty
+                  ? 'Try a different search term'
+                  : deadline !== 'all' || priorityFilter !== 'all'
+                    ? 'Try a different filter.'
+                    : filter === 'pending'
+                      ? "You're all caught up 🎉"
+                      : filter === 'done'
+                        ? 'Complete some tasks to see them here'
+                        : 'Hit "New task" to get started'}
+              </p>
             </div>
-          ) : view === 'list' ? <div className="task-list">{filteredTasks.map(renderTask)}</div> : (
-            <div className="task-board">{(['pending','done'] as const).filter(status => filter === 'all' || filter === status).map(status => {
-              const cards = filteredTasks.filter(task => task.done === (status === 'done'))
-              return <section key={status} className="board-column"><h3><i className={status} />{status}<span>{cards.length}</span></h3>
-                {cards.length ? cards.map(renderTask) : <p className="column-empty">No {status} tasks</p>}
-              </section>
-            })}</div>
+          ) : view === 'list' ? (
+            <div className="task-list">{filteredTasks.map(renderTask)}</div>
+          ) : (
+            <div className="task-board">
+              {(['pending', 'done'] as const)
+                .filter((status) => filter === 'all' || filter === status)
+                .map((status) => {
+                  const cards = filteredTasks.filter((task) => task.done === (status === 'done'))
+                  return (
+                    <section key={status} className="board-column">
+                      <h3>
+                        <i className={status} />
+                        {status}
+                        <span>{cards.length}</span>
+                      </h3>
+                      {cards.length ? (
+                        cards.map(renderTask)
+                      ) : (
+                        <p className="column-empty">No {status} tasks</p>
+                      )}
+                    </section>
+                  )
+                })}
+            </div>
           )}
         </section>
       </main>
       {showForm && (
-        <dialog className="task-dialog" aria-labelledby="new-task-heading" ref={dialog => { if (dialog && !dialog.open) dialog.showModal() }}
-          onClose={() => setShowForm(false)} onCancel={e => { if (isAdding) e.preventDefault() }}>
-          <form onSubmit={e => { e.preventDefault(); handleAddTask() }}>
-            <div className="dialog-top"><h2 id="new-task-heading">New task</h2><button type="button" aria-label="Close form" disabled={isAdding} onClick={() => setShowForm(false)}><X size={18}/></button></div>
-            <label>Task name<input autoFocus required value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="What needs to be done?" /></label>
-            <label>Description<textarea value={newDescription} onChange={e => setNewDescription(e.target.value)} rows={3} placeholder="Add details or context…" /></label>
-            <label>Due date<input type="date" value={newDueDate} onChange={e => setNewDueDate(e.target.value)} /></label>
-            <fieldset><legend>Priority</legend><div className="priority-options">{priorities.map(p => <button type="button" key={p} aria-pressed={newPriority === p} onClick={() => setNewPriority(p)}>{p}</button>)}</div></fieldset>
-            {error && <p className="work-error" role="alert">{error}</p>}
-            <div className="dialog-actions"><button type="button" disabled={isAdding} onClick={() => setShowForm(false)}>Cancel</button><button className="add-button" disabled={!newTitle.trim() || isAdding}><Check size={16}/>{isAdding ? 'Adding…' : 'Add task'}</button></div>
+        <dialog
+          className="task-dialog"
+          aria-labelledby="new-task-heading"
+          ref={(dialog) => {
+            if (dialog && !dialog.open) dialog.showModal()
+          }}
+          onClose={() => setShowForm(false)}
+          onCancel={(e) => {
+            if (isAdding) e.preventDefault()
+          }}
+        >
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleAddTask()
+            }}
+          >
+            <div className="dialog-top">
+              <h2 id="new-task-heading">New task</h2>
+              <button
+                type="button"
+                aria-label="Close form"
+                disabled={isAdding}
+                onClick={() => setShowForm(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <label>
+              Task name
+              <input
+                autoFocus
+                required
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="What needs to be done?"
+              />
+            </label>
+            <label>
+              Description
+              <textarea
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                rows={3}
+                placeholder="Add details or context…"
+              />
+            </label>
+            <label>
+              Due date
+              <input
+                type="date"
+                value={newDueDate}
+                onChange={(e) => setNewDueDate(e.target.value)}
+              />
+            </label>
+            <fieldset>
+              <legend>Priority</legend>
+              <div className="priority-options">
+                {priorities.map((p) => (
+                  <button
+                    type="button"
+                    key={p}
+                    aria-pressed={newPriority === p}
+                    onClick={() => setNewPriority(p)}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            {error && (
+              <p className="work-error" role="alert">
+                {error}
+              </p>
+            )}
+            <div className="dialog-actions">
+              <button type="button" disabled={isAdding} onClick={() => setShowForm(false)}>
+                Cancel
+              </button>
+              <button className="add-button" disabled={!newTitle.trim() || isAdding}>
+                <Check size={16} />
+                {isAdding ? 'Adding…' : 'Add task'}
+              </button>
+            </div>
           </form>
         </dialog>
       )}

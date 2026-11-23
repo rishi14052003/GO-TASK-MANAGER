@@ -87,7 +87,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "Failed to create task")
 		return
 	}
-	log.Printf("CreateTask: user=%d id=%d title=%s priority=%s", userID, task.ID, task.Title, task.Priority)
+	log.Printf("CreateTask: user=%d id=%d priority=%s", userID, task.ID, task.Priority)
 	writeJSON(w, http.StatusCreated, task)
 }
 
@@ -116,7 +116,7 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "Task not found")
 		return
 	}
-	log.Printf("UpdateTask: user=%d id=%d title=%s done=%v priority=%s", userID, id, updated.Title, updated.Done, updated.Priority)
+	log.Printf("UpdateTask: user=%d id=%d done=%v priority=%s", userID, id, updated.Done, updated.Priority)
 	writeJSON(w, http.StatusOK, updated)
 }
 

@@ -32,12 +32,24 @@ export default function Login() {
       <form onSubmit={handleSubmit} aria-busy={submitting}>
         <div className="auth-field">
           <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" required autoComplete="email" placeholder="you@example.com" />
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="you@example.com"
+          />
         </div>
         <PasswordField autoComplete="current-password" placeholder="Enter your password" />
-        {error && <p role="alert" className="auth-error">{error}</p>}
+        {error && (
+          <p role="alert" className="auth-error">
+            {error}
+          </p>
+        )}
         <button className="add-button" type="submit" disabled={submitting}>
-          {submitting ? 'Signing in…' : 'Sign in'}<ArrowRight size={16} aria-hidden="true" />
+          {submitting ? 'Signing in…' : 'Sign in'}
+          <ArrowRight size={16} aria-hidden="true" />
         </button>
       </form>
     </AuthLayout>

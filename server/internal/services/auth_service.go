@@ -24,7 +24,6 @@ func NewAuthService(db *sql.DB) *AuthService {
 }
 
 func (s *AuthService) Register(req *models.RegisterRequest) (*models.User, error) {
-	// Check if email already exists
 	var exists int
 	if err := s.db.QueryRow(
 		"SELECT 1 FROM users WHERE email = ? LIMIT 1",
@@ -73,7 +72,6 @@ func (s *AuthService) Register(req *models.RegisterRequest) (*models.User, error
 func (s *AuthService) Login(req *models.LoginRequest) (*models.AuthResponse, error) {
 	var user models.User
 
-	// Fetch user by email
 	err := s.db.QueryRow(
 		"SELECT id, name, email, password, created_at FROM users WHERE email = ? LIMIT 1",
 		req.Email,
@@ -91,13 +89,11 @@ func (s *AuthService) Login(req *models.LoginRequest) (*models.AuthResponse, err
 		return nil, err
 	}
 
-	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		// Keep the same message so frontend still shows "invalid email"
 		return nil, fmt.Errorf("invalid email")
 	}
 
-	// Generate JWT
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user.ID,
 		"email":   user.Email,

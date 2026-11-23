@@ -1,12 +1,12 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
-  --font-sans: "Inter Variable", Arial, sans-serif;
-  --color-fokus-pale: #FFF7ED;
-  --color-fokus-yellow: #FFAB00;
-  --color-fokus-yellow-dark: #A85D00;
-  --color-fokus-dark-orange: #C2410C;
-  --color-fokus-dark-orange-hover: #9A3412;
+  --font-sans: 'Inter Variable', Arial, sans-serif;
+  --color-fokus-pale: #fff7ed;
+  --color-fokus-yellow: #ffab00;
+  --color-fokus-yellow-dark: #a85d00;
+  --color-fokus-dark-orange: #c2410c;
+  --color-fokus-dark-orange-hover: #9a3412;
 }
 
 html,
@@ -16,11 +16,11 @@ body,
 }
 
 body {
-  background-color: #FFF7ED;
+  background-color: #fff7ed;
   color: #172033;
   -webkit-font-smoothing: antialiased;
 }
 
 * {
-  border-color: #F1D9C6;
+  border-color: #f1d9c6;
 }

@@ -23,7 +23,11 @@ export default function Register() {
     setSubmitting(true)
     setError('')
     try {
-      await register({ name: String(fields.get('name')), email: String(fields.get('email')), password })
+      await register({
+        name: String(fields.get('name')),
+        email: String(fields.get('email')),
+        password,
+      })
       navigate('/login', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create account.')
@@ -41,13 +45,30 @@ export default function Register() {
         </div>
         <div className="auth-field">
           <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" required autoComplete="email" placeholder="you@example.com" />
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="you@example.com"
+          />
         </div>
         <PasswordField autoComplete="new-password" placeholder="Create a password" />
-        <PasswordField id="confirm-password" label="Confirm password" autoComplete="new-password" placeholder="Repeat your password" />
-        {error && <p role="alert" className="auth-error">{error}</p>}
+        <PasswordField
+          id="confirm-password"
+          label="Confirm password"
+          autoComplete="new-password"
+          placeholder="Repeat your password"
+        />
+        {error && (
+          <p role="alert" className="auth-error">
+            {error}
+          </p>
+        )}
         <button className="add-button" type="submit" disabled={submitting}>
-          {submitting ? 'Creating account…' : 'Create account'}<ArrowRight size={16} aria-hidden="true" />
+          {submitting ? 'Creating account…' : 'Create account'}
+          <ArrowRight size={16} aria-hidden="true" />
         </button>
       </form>
     </AuthLayout>

@@ -8,7 +8,6 @@ import (
 )
 
 func main() {
-	// Connection string for your database
 	dsn := "root:root@tcp(localhost:3306)/task_manager?parseTime=true&charset=utf8mb4&loc=Local"
 
 	log.Printf("Connecting to database: task_manager")
@@ -19,20 +18,17 @@ func main() {
 	}
 	defer db.Close()
 
-	// Test the connection
 	if err := db.Ping(); err != nil {
 		log.Fatalf("Failed to ping database: %v", err)
 	}
 
 	log.Println("Database connection successful!")
 
-	// Check if tasks table exists
 	var tableName string
 	err = db.QueryRow("SHOW TABLES LIKE 'tasks'").Scan(&tableName)
 	if err == sql.ErrNoRows {
 		log.Println("Tasks table does not exist. Creating it...")
 
-		// Create tasks table
 		createTableSQL := `
 		CREATE TABLE tasks (
 			id INT AUTO_INCREMENT PRIMARY KEY,
@@ -56,12 +52,10 @@ func main() {
 		log.Println("Tasks table already exists")
 	}
 
-	// Check if users table exists
 	err = db.QueryRow("SHOW TABLES LIKE 'users'").Scan(&tableName)
 	if err == sql.ErrNoRows {
 		log.Println("Users table does not exist. Creating it...")
 
-		// Create users table
 		createTableSQL := `
 		CREATE TABLE users (
 			id INT AUTO_INCREMENT PRIMARY KEY,

@@ -57,7 +57,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Register: created user=%d email=%s", user.ID, user.Email)
+	log.Printf("Register: created user=%d", user.ID)
 	writeJSON(w, http.StatusCreated, user)
 }
 
@@ -79,7 +79,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Login: user=%d email=%s", response.User.ID, response.User.Email)
+	log.Printf("Login: user=%d", response.User.ID)
 	writeJSON(w, http.StatusOK, response)
 }
 

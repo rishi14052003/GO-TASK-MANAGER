@@ -1,32 +1,29 @@
-import type {
-  LoginRequest,
-  RegisterRequest,
-  AuthResponse,
-  User,
-} from '../types/user'
-import type {
-  Task,
-  CreateTaskRequest,
-  UpdateTaskRequest,
-} from '../types/task'
+import type { LoginRequest, RegisterRequest, AuthResponse, User } from '../types/user'
+import type { Task, CreateTaskRequest, UpdateTaskRequest } from '../types/task'
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
-async function request<TResponse>(
-  path: string,
-  options: RequestInit = {},
-): Promise<TResponse> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-    ...options,
-  })
+async function request<TResponse>(path: string, options: RequestInit = {}): Promise<TResponse> {
+  const method = options.method ?? 'GET'
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+      ...options,
+    })
+  } catch (error) {
+    console.error(`[API] ${method} ${path} failed to connect`, error)
+    throw error
+  }
 
-  const isJson =
-    response.headers.get('content-type')?.includes('application/json')
+  if (import.meta.env.DEV) {
+    console.log(`[API] ${method} ${path} -> ${response.status}`)
+  }
+
+  const isJson = response.headers.get('content-type')?.includes('application/json')
 
   if (!response.ok) {
     let errorMessage = 'Request failed'
@@ -81,11 +78,7 @@ export const api = {
     })
   },
 
-  updateTask(
-    token: string,
-    id: number,
-    body: UpdateTaskRequest,
-  ): Promise<Task> {
+  updateTask(token: string, id: number, body: UpdateTaskRequest): Promise<Task> {
     return request<Task>(`/tasks/${id}`, {
       method: 'PUT',
       headers: {
@@ -104,4 +97,3 @@ export const api = {
     })
   },
 }
-
