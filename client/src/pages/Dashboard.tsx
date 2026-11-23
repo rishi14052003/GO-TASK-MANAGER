@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CheckCircle2, Clock3, ListTodo, TrendingUp, Plus, X, Search } from 'lucide-react'
+import { Activity, AlertCircle, Calendar, CalendarClock, Check, ChevronDown, Columns2, LayoutList, Plus, Search, SlidersHorizontal, Sun, X } from 'lucide-react'
+import './Dashboard.css'
 import Navbar from '../components/Navbar'
 import StatsCard from '../components/StatsCard'
 import TaskCard from '../components/TaskCard'
@@ -7,11 +8,15 @@ import { useAuth } from '../context/useAuth'
 import { api } from '../services/api'
 import type { Task as ApiTask, Priority } from '../types/task'
 
-const PRIORITIES: { value: Priority; label: string; className: string }[] = [
-  { value: 'low',    label: 'Low',    className: 'text-sky-400 border-sky-500/30 bg-sky-500/10' },
-  { value: 'medium', label: 'Medium', className: 'text-amber-400 border-amber-500/30 bg-amber-500/10' },
-  { value: 'high',   label: 'High',   className: 'text-rose-400 border-rose-500/30 bg-rose-500/10' },
-]
+const priorities: Priority[] = ['low', 'medium', 'high']
+type Deadline = 'all' | 'overdue' | 'today' | 'upcoming'
+const deadlineLabels = { overdue: 'Overdue', today: 'Due today', upcoming: 'Upcoming' } as const
+
+function deadlineOf(task: ApiTask, today: string): Deadline {
+  if (task.done || !task.dueDate) return 'all'
+  const day = task.dueDate.slice(0, 10)
+  return day < today ? 'overdue' : day === today ? 'today' : 'upcoming'
+}
 
 const Dashboard = () => {
   const { token, user } = useAuth()
@@ -29,6 +34,10 @@ const Dashboard = () => {
   const [search, setSearch] = useState('')
   const searchInput = useRef<HTMLInputElement>(null)
   const searchTerm = search.trim()
+  const [view, setView] = useState<'list' | 'board'>('list')
+  const [deadline, setDeadline] = useState<Deadline>('all')
+  const now = new Date()
+  const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-')
 
   useEffect(() => {
     if (!token) return
@@ -51,8 +60,8 @@ const Dashboard = () => {
   const tasksInFilter = useMemo(() => tasks.filter((task) => {
     const matchesStatus = filter === 'all' || task.done === (filter === 'done')
     const matchesPriority = priorityFilter === 'all' || (task.priority ?? 'medium') === priorityFilter
-    return matchesStatus && matchesPriority
-  }), [tasks, filter, priorityFilter])
+    return matchesStatus && matchesPriority && (deadline === 'all' || deadlineOf(task, today) === deadline)
+  }), [tasks, filter, priorityFilter, deadline, today])
 
   const filteredTasks = useMemo(() => {
     if (!searchTerm) return tasksInFilter
@@ -65,7 +74,7 @@ const Dashboard = () => {
   const searchCausedEmpty = tasksInFilter.length > 0 && filteredTasks.length === 0
 
   const handleAddTask = () => {
-    if (!newTitle.trim() || !token) return
+    if (!newTitle.trim() || !token || isAdding) return
     setIsAdding(true)
     api.createTask(token, {
       title: newTitle.trim(),
@@ -85,11 +94,6 @@ const Dashboard = () => {
       .finally(() => setIsAdding(false))
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddTask() }
-    if (e.key === 'Escape') setShowForm(false)
-  }
-
   const toggleTask = (id: number) => {
     if (!token) return
     const task = tasks.find((t) => t.id === id)
@@ -106,145 +110,94 @@ const Dashboard = () => {
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Unable to delete task.'))
   }
 
-  const greeting = () => {
-    const h = new Date().getHours()
-    if (h < 12) return 'Good morning'
-    if (h < 17) return 'Good afternoon'
-    return 'Good evening'
+  function pickDeadline(next: Exclude<Deadline, 'all'>) {
+    setDeadline(deadline === next ? 'all' : next)
+    setFilter('all')
   }
 
-  const firstName = user?.name?.split(' ')[0] || 'there'
-
+  const renderTask = (task: ApiTask) => <TaskCard key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-slate-50">
+    <div className="workspace">
       <Navbar userName={user?.name} />
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
+      <main className="workspace-wrap work-main">
+        <div className="work-header">
           <div>
-            <p className="text-sm text-slate-500 font-medium">{greeting()},</p>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-50 mt-0.5">{firstName} 👋</h1>
-            <p className="text-sm text-slate-400 mt-1">
-              {stats.pending === 0 ? "You're all caught up — nice work!" : `You have ${stats.pending} task${stats.pending !== 1 ? 's' : ''} pending`}
-            </p>
+            <p className="work-date"><Calendar size={14} />{now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+            <h1>My workspace<span>.</span></h1>
           </div>
-          <button onClick={() => setShowForm(true)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition-all self-start sm:self-auto">
-            <Plus className="h-4 w-4" />New task
-          </button>
+          <button className="add-button" onClick={() => setShowForm(true)}><Plus size={18} />New task</button>
         </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
-          <StatsCard label="Total" value={stats.total} icon={<ListTodo className="h-4 w-4 text-slate-400" />} />
-          <StatsCard label="Completed" value={stats.completed} accentColorClass="text-emerald-400" iconBg="bg-emerald-500/10" icon={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-          <StatsCard label="Pending" value={stats.pending} accentColorClass="text-amber-400" iconBg="bg-amber-500/10" icon={<Clock3 className="h-4 w-4 text-amber-400" />} />
-          <StatsCard label="Progress" value={`${stats.completionRate}%`} accentColorClass="text-sky-400" iconBg="bg-sky-500/10" icon={<TrendingUp className="h-4 w-4 text-sky-400" />}>
-            <div className="h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-sky-500 to-emerald-500 transition-all duration-500" style={{ width: `${stats.completionRate}%` }} />
-            </div>
-          </StatsCard>
-        </div>
-
-        {showForm && (
-          <div className="rounded-2xl border border-emerald-500/20 bg-slate-900/60 p-4 animate-fade-in">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-slate-200">New task</p>
-              <button onClick={() => setShowForm(false)} className="text-slate-500 hover:text-slate-300 transition"><X className="h-4 w-4" /></button>
-            </div>
-            <input autoFocus type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} onKeyDown={handleKeyDown} placeholder="What needs to be done?" className="w-full rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all mb-3" />
-            <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={2} placeholder="Add details or context… (optional)" className="w-full rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all resize-none mb-3" />
-            <label htmlFor="task-due-date" className="mb-1 block text-xs text-slate-500">Due date</label>
-            <input
-              id="task-due-date"
-              type="date"
-              value={newDueDate}
-              onChange={(e) => setNewDueDate(e.target.value)}
-              className="mb-3 w-full rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-2.5 text-sm text-slate-100 [color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-            />
-            <div className="flex items-center gap-2 mb-3">
-              <p className="text-xs text-slate-500">Priority:</p>
-              <div className="flex gap-1.5">
-                {PRIORITIES.map((p) => (
-                  <button key={p.value} type="button" onClick={() => setNewPriority(p.value)} className={`px-3 py-1 rounded-lg border text-xs font-medium transition-all ${newPriority === p.value ? p.className : 'border-slate-700 text-slate-500 hover:text-slate-300'}`}>{p.label}</button>
-                ))}
+        <section className="overview" aria-label="Workspace overview">
+          <div className="progress-panel">
+            <div className="contours" aria-hidden="true">{Array.from({length: 24}, (_, i) =>
+              <i key={i} style={{ width: 104 + i * 19, height: 62 + i * 14 }} />)}</div>
+            <div className="progress-content">
+              <h2><Activity size={17} />Completion rate</h2>
+              <strong>{stats.completionRate}<small>%</small></strong>
+              <div className="progress-track" role="progressbar" aria-label="Task completion" aria-valuenow={stats.completionRate} aria-valuemin={0} aria-valuemax={100}>
+                <i style={{width: `${stats.completionRate}%`}} />
               </div>
-            </div>
-            <div className="flex items-center gap-2 justify-end">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all">Cancel</button>
-              <button onClick={handleAddTask} disabled={!newTitle.trim() || isAdding} className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold text-slate-950 transition-all">{isAdding ? 'Adding…' : 'Add task'}</button>
+              <p>{stats.completed} of {stats.total} tasks complete</p>
             </div>
           </div>
-        )}
-
-        <div className="animate-fade-in">
-          <div className="flex flex-col md:flex-row gap-3 mb-4">
-            <div className="relative min-w-0 flex-1">
-              <Search aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
-              <input
-                ref={searchInput}
-                type="text"
-                aria-label="Search tasks"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search tasks…"
-                className="w-full rounded-xl border border-slate-800 bg-slate-900/60 pl-9 pr-10 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all"
-              />
-              {search && (
-                <button
-                  type="button"
-                  aria-label="Clear search"
-                  onClick={() => {
-                    setSearch('')
-                    searchInput.current?.focus()
-                  }}
-                  className="absolute inset-y-0 right-0 flex w-9 items-center justify-center rounded-xl text-slate-500 hover:text-slate-300 transition"
-                >
-                  <X aria-hidden="true" className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-            <div className="flex gap-2 flex-wrap self-start">
-              <div className="flex gap-1 p-1 rounded-xl bg-slate-900/60 border border-slate-800">
-                {(['all', 'pending', 'done'] as const).map((f) => (
-                  <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${filter === f ? 'bg-slate-700 text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>
-                    {f}{f === 'all' && ` (${stats.total})`}{f === 'pending' && ` (${stats.pending})`}{f === 'done' && ` (${stats.completed})`}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-1 p-1 rounded-xl bg-slate-900/60 border border-slate-800">
-                <button onClick={() => setPriorityFilter('all')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${priorityFilter === 'all' ? 'bg-slate-700 text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>All</button>
-                {PRIORITIES.map((p) => (
-                  <button key={p.value} onClick={() => setPriorityFilter(p.value)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${priorityFilter === p.value ? p.className : 'text-slate-500 hover:text-slate-300'}`}>{p.label}</button>
-                ))}
-              </div>
+          <div className="agenda">
+            <h2><CalendarClock size={17} />Deadlines</h2>
+            {(['overdue','today','upcoming'] as const).map(key => (
+              <StatsCard key={key} label={deadlineLabels[key]} value={tasks.filter(task => deadlineOf(task, today) === key).length}
+                icon={key === 'overdue' ? AlertCircle : key === 'today' ? Sun : Calendar}
+                selected={deadline === key} onClick={() => pickDeadline(key)} />
+            ))}
+          </div>
+        </section>
+        <section className="tasks-section" aria-label="My tasks">
+          <div className="tasks-header"><h2>My tasks <span>{stats.total}</span></h2>
+            <div className="view-switch" aria-label="Task view">
+              <button aria-pressed={view === 'list'} onClick={() => setView('list')}><LayoutList size={15} />List</button>
+              <button aria-pressed={view === 'board'} onClick={() => setView('board')}><Columns2 size={15} />Board</button>
             </div>
           </div>
-
-          {search && !isLoading && (
-            <p role="status" className="text-xs text-slate-500 mb-3">
-              {filteredTasks.length === 0 ? 'No tasks match your search' : `${filteredTasks.length} task${filteredTasks.length === 1 ? '' : 's'} found`}
-            </p>
+          <div className="task-toolbar">
+            <div className="search-field"><Search size={16} /><input ref={searchInput} aria-label="Search tasks" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search tasks…" />
+              {search && <button aria-label="Clear search" onClick={() => {setSearch(''); searchInput.current?.focus()}}><X size={15}/></button>}
+            </div>
+            <div className="status-filters" aria-label="Task status">
+              {(['all','pending','done'] as const).map(f => <button key={f} aria-pressed={filter === f} onClick={() => setFilter(f)}>{f} <span>{f === 'all' ? stats.total : f === 'pending' ? stats.pending : stats.completed}</span></button>)}
+            </div>
+            <label className="priority-select"><SlidersHorizontal size={14} /><select aria-label="Filter by priority" value={priorityFilter} onChange={e => setPriorityFilter(e.target.value as Priority | 'all')}>
+              <option value="all">All priorities</option>{priorities.map(p => <option value={p} key={p}>{p[0].toUpperCase() + p.slice(1)}</option>)}
+            </select><ChevronDown size={13}/></label>
+          </div>
+          {deadline !== 'all' && <button className="deadline-chip" onClick={() => setDeadline('all')} aria-label={`Clear ${deadlineLabels[deadline]} filter`}>{deadlineLabels[deadline]} <X size={13}/></button>}
+          {search && !isLoading && <p className="search-count" role="status">{filteredTasks.length === 0 ? 'No tasks match your search' : `${filteredTasks.length} task${filteredTasks.length === 1 ? '' : 's'} found`}</p>}
+          {error && <p role="alert" className="work-error">{error}</p>}
+          {isLoading ? <p className="blank-state">Loading tasks…</p> : filteredTasks.length === 0 ? (
+            <div className="blank-state"><strong>{searchCausedEmpty ? `🔍 No tasks match "${searchTerm}"` : deadline !== 'all' || priorityFilter !== 'all' ? 'No tasks in this view' : filter === 'done' ? 'No completed tasks yet' : filter === 'pending' ? 'No pending tasks!' : 'No tasks yet'}</strong>
+              <p>{searchCausedEmpty ? 'Try a different search term' : deadline !== 'all' || priorityFilter !== 'all' ? 'Try a different filter.' : filter === 'pending' ? "You're all caught up 🎉" : filter === 'done' ? 'Complete some tasks to see them here' : 'Hit "New task" to get started'}</p>
+            </div>
+          ) : view === 'list' ? <div className="task-list">{filteredTasks.map(renderTask)}</div> : (
+            <div className="task-board">{(['pending','done'] as const).filter(status => filter === 'all' || filter === status).map(status => {
+              const cards = filteredTasks.filter(task => task.done === (status === 'done'))
+              return <section key={status} className="board-column"><h3><i className={status} />{status}<span>{cards.length}</span></h3>
+                {cards.length ? cards.map(renderTask) : <p className="column-empty">No {status} tasks</p>}
+              </section>
+            })}</div>
           )}
-
-          {error && <div className="rounded-xl border border-rose-800/50 bg-rose-900/20 px-4 py-3 mb-4"><p className="text-sm text-rose-400">{error}</p></div>}
-
-          <div className="space-y-2">
-            {isLoading ? (
-              <div className="space-y-2">{[1,2,3].map((i) => <div key={i} className="h-14 rounded-xl bg-slate-900/40 border border-slate-800/50 animate-pulse" />)}</div>
-            ) : filteredTasks.length === 0 ? (
-              <div className="rounded-2xl border border-slate-800/50 bg-slate-900/20 py-16 text-center">
-                <p className="text-3xl mb-3">{searchCausedEmpty ? '🔍' : filter === 'done' ? '🎯' : filter === 'pending' ? '✅' : '📋'}</p>
-                <p className="break-words text-sm font-medium text-slate-300">{searchCausedEmpty ? `No tasks match "${searchTerm}"` : filter === 'done' ? 'No completed tasks yet' : filter === 'pending' ? 'No pending tasks!' : 'No tasks yet'}</p>
-                <p className="text-xs text-slate-500 mt-1">{searchCausedEmpty ? 'Try a different search term' : filter === 'all' ? 'Hit "New task" to get started' : filter === 'pending' ? "You're all caught up 🎉" : 'Complete some tasks to see them here'}</p>
-              </div>
-            ) : (
-              filteredTasks.map((task) => (
-                <div key={task.id} className="animate-slide-in">
-                  <TaskCard id={task.id} title={task.title} description={task.description} done={task.done} priority={task.priority ?? 'medium'} dueDate={task.dueDate} createdAt={task.createdAt} onToggle={toggleTask} onDelete={deleteTask} />
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        </section>
       </main>
+      {showForm && (
+        <dialog className="task-dialog" aria-labelledby="new-task-heading" ref={dialog => { if (dialog && !dialog.open) dialog.showModal() }}
+          onClose={() => setShowForm(false)} onCancel={e => { if (isAdding) e.preventDefault() }}>
+          <form onSubmit={e => { e.preventDefault(); handleAddTask() }}>
+            <div className="dialog-top"><h2 id="new-task-heading">New task</h2><button type="button" aria-label="Close form" disabled={isAdding} onClick={() => setShowForm(false)}><X size={18}/></button></div>
+            <label>Task name<input autoFocus required value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="What needs to be done?" /></label>
+            <label>Description<textarea value={newDescription} onChange={e => setNewDescription(e.target.value)} rows={3} placeholder="Add details or context…" /></label>
+            <label>Due date<input type="date" value={newDueDate} onChange={e => setNewDueDate(e.target.value)} /></label>
+            <fieldset><legend>Priority</legend><div className="priority-options">{priorities.map(p => <button type="button" key={p} aria-pressed={newPriority === p} onClick={() => setNewPriority(p)}>{p}</button>)}</div></fieldset>
+            {error && <p className="work-error" role="alert">{error}</p>}
+            <div className="dialog-actions"><button type="button" disabled={isAdding} onClick={() => setShowForm(false)}>Cancel</button><button className="add-button" disabled={!newTitle.trim() || isAdding}><Check size={16}/>{isAdding ? 'Adding…' : 'Add task'}</button></div>
+          </form>
+        </dialog>
+      )}
     </div>
   )
 }
