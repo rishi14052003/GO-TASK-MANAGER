@@ -6,6 +6,7 @@ export type Task = {
   description?: string
   done: boolean
   priority: Priority
+  dueDate?: string | null
   userId: number
   createdAt: string
 }
@@ -14,6 +15,7 @@ export type CreateTaskRequest = {
   title: string
   description?: string
   priority?: Priority
+  dueDate?: string
 }
 
 export type UpdateTaskRequest = {
@@ -21,4 +23,5 @@ export type UpdateTaskRequest = {
   description?: string
   done?: boolean
   priority?: Priority
+  dueDate?: string | null
 }
