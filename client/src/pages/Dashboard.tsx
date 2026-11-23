@@ -18,6 +18,7 @@ const Dashboard = () => {
   const [tasks, setTasks] = useState<ApiTask[]>([])
   const [newTitle, setNewTitle] = useState('')
   const [newDescription, setNewDescription] = useState('')
+  const [newDueDate, setNewDueDate] = useState('')
   const [newPriority, setNewPriority] = useState<Priority>('medium')
   const [isLoading, setIsLoading] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
@@ -66,11 +67,17 @@ const Dashboard = () => {
   const handleAddTask = () => {
     if (!newTitle.trim() || !token) return
     setIsAdding(true)
-    api.createTask(token, { title: newTitle.trim(), description: newDescription.trim() || undefined, priority: newPriority })
+    api.createTask(token, {
+      title: newTitle.trim(),
+      description: newDescription.trim() || undefined,
+      priority: newPriority,
+      dueDate: newDueDate || undefined,
+    })
       .then((created) => {
         setTasks((prev) => [created, ...prev])
         setNewTitle('')
         setNewDescription('')
+        setNewDueDate('')
         setNewPriority('medium')
         setShowForm(false)
       })
@@ -144,6 +151,14 @@ const Dashboard = () => {
             </div>
             <input autoFocus type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} onKeyDown={handleKeyDown} placeholder="What needs to be done?" className="w-full rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all mb-3" />
             <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={2} placeholder="Add details or context… (optional)" className="w-full rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all resize-none mb-3" />
+            <label htmlFor="task-due-date" className="mb-1 block text-xs text-slate-500">Due date</label>
+            <input
+              id="task-due-date"
+              type="date"
+              value={newDueDate}
+              onChange={(e) => setNewDueDate(e.target.value)}
+              className="mb-3 w-full rounded-xl border border-slate-700/80 bg-slate-800/50 px-4 py-2.5 text-sm text-slate-100 [color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+            />
             <div className="flex items-center gap-2 mb-3">
               <p className="text-xs text-slate-500">Priority:</p>
               <div className="flex gap-1.5">
@@ -223,7 +238,7 @@ const Dashboard = () => {
             ) : (
               filteredTasks.map((task) => (
                 <div key={task.id} className="animate-slide-in">
-                  <TaskCard id={task.id} title={task.title} description={task.description} done={task.done} priority={task.priority ?? 'medium'} createdAt={task.createdAt} onToggle={toggleTask} onDelete={deleteTask} />
+                  <TaskCard id={task.id} title={task.title} description={task.description} done={task.done} priority={task.priority ?? 'medium'} dueDate={task.dueDate} createdAt={task.createdAt} onToggle={toggleTask} onDelete={deleteTask} />
                 </div>
               ))
             )}
