@@ -13,7 +13,9 @@ type contextKey string
 
 const UserIDKey contextKey = "user_id"
 
-func AuthMiddleware(next http.Handler) http.Handler {
+const adminKey contextKey = "is_admin"
+
+func AuthMiddleware(secret []byte, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
@@ -28,8 +30,8 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return []byte("your-secret-key-change-in-production"), nil
-		})
+			return secret, nil
+		}, jwt.WithValidMethods([]string{"HS256"}), jwt.WithExpirationRequired())
 
 		if err != nil || !token.Valid {
 			writeError(w, http.StatusUnauthorized, "Invalid token")
@@ -49,6 +51,8 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		ctx := context.WithValue(r.Context(), UserIDKey, int(userID))
+		isAdmin, _ := claims["is_admin"].(bool)
+		ctx = context.WithValue(ctx, adminKey, isAdmin)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

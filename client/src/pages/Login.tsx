@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
+import { api } from '../services/api'
 import AuthLayout from '../components/AuthLayout'
 import PasswordField from '../components/PasswordField'
 import { useAuth } from '../context/useAuth'
 
-export default function Login() {
+export default function Login({ admin = false }: { admin?: boolean }) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const { login } = useAuth()
@@ -18,8 +19,23 @@ export default function Login() {
     setSubmitting(true)
     setError('')
     try {
-      await login({ email: String(fields.get('email')), password: String(fields.get('password')) })
-      navigate('/dashboard', { replace: true })
+      const credentials = {
+        email: String(fields.get('email')),
+        password: String(fields.get('password')),
+      }
+      if (admin) {
+        localStorage.removeItem('admin_token')
+        const { user, token } = await api.login(credentials)
+        if (!user.isAdmin) {
+          setError('You do not have admin access')
+          return
+        }
+        localStorage.setItem('admin_token', token)
+        navigate('/admin', { replace: true })
+      } else {
+        await login(credentials)
+        navigate('/dashboard', { replace: true })
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in.')
     } finally {
@@ -28,7 +44,7 @@ export default function Login() {
   }
 
   return (
-    <AuthLayout mode="login">
+    <AuthLayout mode={admin ? 'admin' : 'login'}>
       <form onSubmit={handleSubmit} aria-busy={submitting}>
         <div className="auth-field">
           <label htmlFor="email">Email</label>

@@ -1,8 +1,16 @@
 import { useState } from 'react'
-import { AlertCircle, Calendar, Check, ChevronDown, Trash2 } from 'lucide-react'
-import type { Task } from '../types/task'
+import { AlertCircle, Calendar, Check, ChevronDown, Pencil, Trash2 } from 'lucide-react'
+import type { Task, Priority } from '../types/task'
 
-type Props = { task: Task; onToggle: (id: number) => void; onDelete: (id: number) => void }
+type Props = {
+  task: Task
+  onToggle: (id: number) => void
+  onDelete: (id: number) => void
+  onEdit: (
+    id: number,
+    fields: { title: string; description: string; priority: Priority }
+  ) => Promise<boolean>
+}
 
 function TaskDueDate({ value, done }: { value: string; done: boolean }) {
   const day = value.slice(0, 10)
@@ -25,10 +33,106 @@ function TaskDueDate({ value, done }: { value: string; done: boolean }) {
   )
 }
 
-export default function TaskCard({ task, onToggle, onDelete }: Props) {
+export default function TaskCard({ task, onToggle, onDelete, onEdit }: Props) {
   const [expanded, setExpanded] = useState(false)
   const { title, description, done, dueDate, id } = task
   const priority = task.priority ?? 'medium'
+  const [isEditing, setIsEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState(title)
+  const [editDescription, setEditDescription] = useState(description ?? '')
+  const [editPriority, setEditPriority] = useState(priority)
+  const [saving, setSaving] = useState(false)
+
+  function resetEditor(open: boolean) {
+    setEditTitle(title)
+    setEditDescription(description ?? '')
+    setEditPriority(priority)
+    setIsEditing(open)
+  }
+
+  async function save() {
+    if (saving || !editTitle.trim()) return
+    setSaving(true)
+    try {
+      if (
+        await onEdit(id, {
+          title: editTitle.trim(),
+          description: editDescription.trim(),
+          priority: editPriority,
+        })
+      ) {
+        setIsEditing(false)
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (isEditing) {
+    return (
+      <article className="work-task">
+        <form
+          className="task-editor"
+          aria-label={`Edit ${title}`}
+          aria-busy={saving}
+          onSubmit={(event) => {
+            event.preventDefault()
+            void save()
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && !saving) {
+              event.preventDefault()
+              resetEditor(false)
+            }
+          }}
+        >
+          <fieldset disabled={saving}>
+            <label>
+              Title
+              <input
+                autoFocus
+                required
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+              />
+            </label>
+            <div>
+              <label htmlFor={`task-description-${id}`}>Description</label>
+              <textarea
+                id={`task-description-${id}`}
+                rows={2}
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+              />
+            </div>
+            <fieldset>
+              <legend>Priority</legend>
+              <div className="priority-options">
+                {(['low', 'medium', 'high'] as const).map((p) => (
+                  <button
+                    type="button"
+                    key={p}
+                    aria-pressed={editPriority === p}
+                    onClick={() => setEditPriority(p)}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <div className="dialog-actions">
+              <button className="edit-cancel" type="button" onClick={() => resetEditor(false)}>
+                Cancel
+              </button>
+              <button className="add-button" type="submit" disabled={!editTitle.trim() || saving}>
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </fieldset>
+        </form>
+      </article>
+    )
+  }
   return (
     <article className={`work-task ${done ? 'is-done' : ''}`}>
       <div className="task-line">
@@ -55,14 +159,32 @@ export default function TaskCard({ task, onToggle, onDelete }: Props) {
             {priority}
           </span>
         </div>
-        <button
-          aria-label={`${expanded ? 'Hide' : 'Show'} details for ${title}`}
-          aria-expanded={expanded}
-          className="task-more"
-          onClick={() => setExpanded(!expanded)}
-        >
-          <ChevronDown size={16} />
-        </button>
+        <div className="card-actions">
+          <button
+            className="row-action task-more"
+            onClick={() => resetEditor(true)}
+            aria-label={`Edit ${title}`}
+            title="Edit task"
+          >
+            <Pencil size={15} />
+          </button>
+          <button
+            className="row-action task-more"
+            onClick={() => onDelete(id)}
+            aria-label={`Delete ${title}`}
+            title="Delete task"
+          >
+            <Trash2 size={15} />
+          </button>
+          <button
+            aria-label={`${expanded ? 'Hide' : 'Show'} details for ${title}`}
+            aria-expanded={expanded}
+            className="task-more"
+            onClick={() => setExpanded(!expanded)}
+          >
+            <ChevronDown size={16} />
+          </button>
+        </div>
       </div>
       {expanded && (
         <div className="task-details">
@@ -78,10 +200,6 @@ export default function TaskCard({ task, onToggle, onDelete }: Props) {
                 })}
               </small>
             )}
-            <button onClick={() => onDelete(id)} aria-label={`Delete ${title}`}>
-              <Trash2 size={14} />
-              Delete task
-            </button>
           </div>
         </div>
       )}

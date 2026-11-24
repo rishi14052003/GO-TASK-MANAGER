@@ -1,6 +1,25 @@
 import type { LoginRequest, RegisterRequest, AuthResponse, User } from '../types/user'
 import type { Task, CreateTaskRequest, UpdateTaskRequest } from '../types/task'
 
+export type AdminStats = {
+  totalUsers: number
+  totalTasks: number
+  completedTasks: number
+  completionRate: number
+}
+export type AdminTask = Pick<
+  Task,
+  'id' | 'title' | 'userId' | 'priority' | 'done' | 'createdAt'
+> & { userName: string }
+
+export class ApiError extends Error {
+  status: number
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
 async function request<TResponse>(path: string, options: RequestInit = {}): Promise<TResponse> {
@@ -8,11 +27,11 @@ async function request<TResponse>(path: string, options: RequestInit = {}): Prom
   let response: Response
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
       headers: {
         'Content-Type': 'application/json',
         ...(options.headers || {}),
       },
-      ...options,
     })
   } catch (error) {
     console.error(`[API] ${method} ${path} failed to connect`, error)
@@ -33,7 +52,7 @@ async function request<TResponse>(path: string, options: RequestInit = {}): Prom
         errorMessage = data.message
       }
     }
-    throw new Error(errorMessage)
+    throw new ApiError(response.status, errorMessage)
   }
 
   if (!isJson) {
@@ -44,7 +63,19 @@ async function request<TResponse>(path: string, options: RequestInit = {}): Prom
   return (await response.json()) as TResponse
 }
 
+function adminRequest<T>(token: string, path: string, method = 'GET') {
+  return request<T>(`/admin${path}`, { method, headers: { Authorization: `Bearer ${token}` } })
+}
+
 export const api = {
+  getAdminStats: (token: string) => adminRequest<AdminStats>(token, '/stats'),
+  getAdminUsers: (token: string) => adminRequest<User[]>(token, '/users'),
+  getAdminTasks: (token: string) => adminRequest<AdminTask[]>(token, '/tasks'),
+  adminDeleteUser: (token: string, id: number) =>
+    adminRequest<void>(token, `/users/${id}`, 'DELETE'),
+  adminDeleteTask: (token: string, id: number) =>
+    adminRequest<void>(token, `/tasks/${id}`, 'DELETE'),
+
   login(body: LoginRequest): Promise<AuthResponse> {
     return request<AuthResponse>('/login', {
       method: 'POST',

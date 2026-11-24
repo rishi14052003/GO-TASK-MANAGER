@@ -4,10 +4,10 @@ import { Link } from 'react-router-dom'
 import '../pages/Dashboard.css'
 import './AuthLayout.css'
 
-type Props = { mode: 'login' | 'register'; children: ReactNode }
+type Props = { mode: 'login' | 'register' | 'admin'; children: ReactNode }
 
 export default function AuthLayout({ mode, children }: Props) {
-  const signingIn = mode === 'login'
+  const signingIn = mode !== 'register'
   return (
     <div className="workspace auth-screen">
       <header className="workspace-nav">
@@ -49,17 +49,29 @@ export default function AuthLayout({ mode, children }: Props) {
           </aside>
           <section className="auth-form-panel" aria-labelledby="auth-title">
             <h1 id="auth-title">
-              {signingIn ? 'Welcome back' : 'Create an account'}
+              {mode === 'admin' ? 'Admin Access' : signingIn ? 'Welcome back' : 'Create an account'}
               <span>.</span>
             </h1>
-            {signingIn && <p className="auth-intro">Sign in to your workspace.</p>}
+            {signingIn && (
+              <p className="auth-intro">
+                {mode === 'admin'
+                  ? 'Sign in to manage users and tasks.'
+                  : 'Sign in to your workspace.'}
+              </p>
+            )}
             {children}
-            <p className="auth-switch">
-              {signingIn ? 'New to Fokus?' : 'Already have an account?'}{' '}
-              <Link to={signingIn ? '/register' : '/login'}>
-                {signingIn ? 'Create an account' : 'Sign in'}
-              </Link>
-            </p>
+            {mode === 'admin' ? (
+              <p className="auth-switch">
+                <Link to="/login">Back to user sign in</Link>
+              </p>
+            ) : (
+              <p className="auth-switch">
+                {signingIn ? 'New to Fokus?' : 'Already have an account?'}{' '}
+                <Link to={signingIn ? '/register' : '/login'}>
+                  {signingIn ? 'Create an account' : 'Sign in'}
+                </Link>
+              </p>
+            )}
           </section>
         </div>
       </main>

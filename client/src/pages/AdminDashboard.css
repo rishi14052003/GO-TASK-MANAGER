@@ -1,0 +1,73 @@
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
+  gap: 12px;
+  margin: 24px 0 32px;
+}
+.admin-stats > div,
+.admin-table {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 12px;
+}
+.admin-stats > div {
+  padding: 16px 20px;
+}
+.admin-stats dt,
+.admin-table th {
+  color: var(--quiet);
+  font-size: 13px;
+}
+.admin-stats dd {
+  color: var(--lime);
+  font-size: 34px;
+  font-weight: 620;
+}
+.admin-section {
+  margin-block: 28px;
+}
+.admin-section h2 {
+  margin-bottom: 10px;
+  font-size: 24px;
+  font-weight: 600;
+}
+.admin-table {
+  overflow-x: auto;
+}
+.admin-table table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.admin-table th,
+.admin-table td {
+  padding: 12px 15px;
+}
+.admin-table td {
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.admin-table .priority {
+  display: inline-flex;
+}
+.admin-badge {
+  display: inline-block;
+  border-radius: 6px;
+  background: #343a37;
+  padding: 3px 9px;
+  font-size: 12px;
+}
+.admin-badge.accent {
+  background: #394330;
+  color: var(--lime);
+}
+.admin-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #efaa99;
+}
+.admin-delete:disabled {
+  opacity: 0.5;
+}

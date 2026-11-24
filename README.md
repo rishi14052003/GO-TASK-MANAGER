@@ -98,7 +98,9 @@ DB_HOST=localhost:3306
 DB_USER=root
 DB_PASS=your_password
 DB_NAME=task_manager
-JWT_SECRET=your-secret-key-change-in-production
+# Use a random secret of at least 32 bytes, shared by all server instances.
+# Without one, sessions expire whenever the server restarts.
+JWT_SECRET=
 ```
 
 ---

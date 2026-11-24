@@ -19,11 +19,11 @@ type AuthHandler struct {
 	jwtSecret   []byte
 }
 
-func NewAuthHandler(authService *services.AuthService, taskService *services.TaskService) *AuthHandler {
+func NewAuthHandler(authService *services.AuthService, taskService *services.TaskService, secret []byte) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
 		taskService: taskService,
-		jwtSecret:   []byte("your-secret-key-change-in-production"),
+		jwtSecret:   secret,
 	}
 }
 

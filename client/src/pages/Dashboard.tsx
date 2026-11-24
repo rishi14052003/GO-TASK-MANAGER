@@ -39,7 +39,7 @@ const Dashboard = () => {
   const [newDescription, setNewDescription] = useState('')
   const [newDueDate, setNewDueDate] = useState('')
   const [newPriority, setNewPriority] = useState<Priority>('medium')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [isAdding, setIsAdding] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -59,15 +59,24 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!token) return
-    setIsLoading(true)
-    setError(null)
+    let active = true
     api
       .getTasks(token)
-      .then((data) => setTasks(Array.isArray(data) ? data : []))
-      .catch((err: unknown) =>
-        setError(err instanceof Error ? err.message : 'Unable to load tasks.')
-      )
-      .finally(() => setIsLoading(false))
+      .then((data) => {
+        if (active) {
+          setTasks(Array.isArray(data) ? data : [])
+          setError(null)
+        }
+      })
+      .catch((err: unknown) => {
+        if (active) setError(err instanceof Error ? err.message : 'Unable to load tasks.')
+      })
+      .finally(() => {
+        if (active) setIsLoading(false)
+      })
+    return () => {
+      active = false
+    }
   }, [token])
 
   const stats = useMemo(() => {
@@ -140,6 +149,22 @@ const Dashboard = () => {
       )
   }
 
+  const editTask = async (
+    id: number,
+    updates: Pick<ApiTask, 'title' | 'description' | 'priority'>
+  ) => {
+    if (!token) return false
+    setError(null)
+    try {
+      const updated = await api.updateTask(token, id, updates)
+      setTasks((prev) => prev.map((task) => (task.id === id ? updated : task)))
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to save task.')
+      return false
+    }
+  }
+
   const deleteTask = (id: number) => {
     if (!token) return
     api
@@ -156,7 +181,13 @@ const Dashboard = () => {
   }
 
   const renderTask = (task: ApiTask) => (
-    <TaskCard key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
+    <TaskCard
+      key={task.id}
+      task={task}
+      onToggle={toggleTask}
+      onDelete={deleteTask}
+      onEdit={editTask}
+    />
   )
   return (
     <div className="workspace">

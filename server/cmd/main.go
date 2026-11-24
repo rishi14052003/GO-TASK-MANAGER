@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"log"
 	"net/http"
 	"os"
@@ -19,13 +20,21 @@ func main() {
 	}
 	defer db.Close()
 
-	authService := services.NewAuthService(db)
+	secret := []byte(os.Getenv("JWT_SECRET"))
+	if len(secret) < 32 || string(secret) == "your-secret-key-change-in-production" {
+		secret = make([]byte, 32)
+		rand.Read(secret)
+		log.Print("Using a per-process signing key. Configure JWT_SECRET with a random secret of at least 32 bytes for persistent sessions.")
+	}
+	adminService := services.NewAdminService(db)
+	adminHandler := handlers.NewAdminHandler(adminService)
+	authService := services.NewAuthService(db, secret)
 	taskService := services.NewTaskService(db)
 
-	authHandler := handlers.NewAuthHandler(authService, taskService)
+	authHandler := handlers.NewAuthHandler(authService, taskService, secret)
 	taskHandler := handlers.NewTaskHandler(taskService)
 
-	router := routes.SetupRoutes(authHandler, taskHandler)
+	router := routes.SetupRoutes(authHandler, taskHandler, adminHandler, secret, adminService.IsAdmin)
 
 	finalHandler := middleware.CORSMiddleware(router)
 
