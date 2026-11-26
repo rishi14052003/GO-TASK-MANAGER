@@ -85,8 +85,21 @@ func (s *AdminService) DeleteUser(ctx context.Context, id int) error {
 	return s.delete(ctx, "DELETE FROM users WHERE id = ?", id)
 }
 
-func (s *AdminService) DeleteTask(ctx context.Context, id int) error {
-	return s.delete(ctx, "DELETE FROM tasks WHERE id = ?", id)
+func (s *AdminService) DeleteTask(ctx context.Context, id int) (*models.Task, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	var task models.Task
+	err = tx.QueryRowContext(ctx, "SELECT user_id, title, COALESCE(description, '') FROM tasks WHERE id = ? FOR UPDATE", id).Scan(&task.UserID, &task.Title, &task.Description)
+	if err != nil {
+		return nil, err
+	}
+	if _, err = tx.ExecContext(ctx, "DELETE FROM tasks WHERE id = ?", id); err != nil {
+		return nil, err
+	}
+	return &task, tx.Commit()
 }
 
 func (s *AdminService) delete(ctx context.Context, query string, id int) error {

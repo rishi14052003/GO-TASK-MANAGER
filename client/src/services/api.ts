@@ -68,6 +68,13 @@ function adminRequest<T>(token: string, path: string, method = 'GET') {
 }
 
 export const api = {
+  forgotPassword: (email: string) =>
+    request<{ message: string }>('/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  verifyOTP: (email: string, otp: string) =>
+    request<{ message: string }>('/verify-otp', { method: 'POST', body: JSON.stringify({ email, otp }) }),
+  resetPassword: (email: string, otp: string, newPassword: string) =>
+    request<{ message: string }>('/reset-password', { method: 'POST', body: JSON.stringify({ email, otp, newPassword }) }),
+
   getAdminStats: (token: string) => adminRequest<AdminStats>(token, '/stats'),
   getAdminUsers: (token: string) => adminRequest<User[]>(token, '/users'),
   getAdminTasks: (token: string) => adminRequest<AdminTask[]>(token, '/tasks'),

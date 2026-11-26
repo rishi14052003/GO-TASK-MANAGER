@@ -25,6 +25,15 @@ func NewAuthService(db *sql.DB, secret []byte) *AuthService {
 	}
 }
 
+func (s *AuthService) GetUserByID(id int) (*models.User, error) {
+	var user models.User
+	err := s.db.QueryRow("SELECT id, name, email FROM users WHERE id = ?", id).Scan(&user.ID, &user.Name, &user.Email)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (s *AuthService) Register(req *models.RegisterRequest) (*models.User, error) {
 	var exists int
 	if err := s.db.QueryRow(

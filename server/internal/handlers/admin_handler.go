@@ -7,13 +7,17 @@ import (
 	"net/http"
 	"strconv"
 
+	"task-manager-server/internal/models"
 	"task-manager-server/internal/services"
 )
 
-type AdminHandler struct{ service *services.AdminService }
+type AdminHandler struct {
+	service       *services.AdminService
+	notifyDeleted func(*models.Task)
+}
 
-func NewAdminHandler(service *services.AdminService) *AdminHandler {
-	return &AdminHandler{service: service}
+func NewAdminHandler(service *services.AdminService, notifyDeleted func(*models.Task)) *AdminHandler {
+	return &AdminHandler{service: service, notifyDeleted: notifyDeleted}
 }
 
 func (h *AdminHandler) GetStats(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +52,13 @@ func (h *AdminHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
-	deleteAdminResource(w, r, h.service.DeleteTask)
+	deleteAdminResource(w, r, func(ctx context.Context, id int) error {
+		task, err := h.service.DeleteTask(ctx, id)
+		if err == nil {
+			go h.notifyDeleted(task)
+		}
+		return err
+	})
 }
 
 func deleteAdminResource(w http.ResponseWriter, r *http.Request, remove func(context.Context, int) error) {

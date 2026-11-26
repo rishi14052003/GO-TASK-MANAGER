@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,13 +16,15 @@ import (
 
 type AuthHandler struct {
 	authService *services.AuthService
+	otpService  *services.OTPService
 	taskService *services.TaskService
 	jwtSecret   []byte
 }
 
-func NewAuthHandler(authService *services.AuthService, taskService *services.TaskService, secret []byte) *AuthHandler {
+func NewAuthHandler(authService *services.AuthService, taskService *services.TaskService, otpService *services.OTPService, secret []byte) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
+		otpService:  otpService,
 		taskService: taskService,
 		jwtSecret:   secret,
 	}
@@ -37,6 +40,50 @@ func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{
 		"message": message,
 	})
+}
+
+func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var req models.ForgotPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.Email) == "" {
+		writeError(w, 400, "A valid email is required")
+		return
+	}
+	if err := h.otpService.SendOTP(strings.TrimSpace(req.Email)); err != nil {
+		log.Printf("password reset email: %v", err)
+	}
+	writeJSON(w, 200, map[string]string{"message": "If that email exists, an OTP has been sent"})
+}
+
+func writeOTPResult(w http.ResponseWriter, err error, success string) {
+	switch {
+	case err == nil:
+		writeJSON(w, 200, map[string]string{"message": success})
+	case errors.Is(err, services.ErrOTPMissing), errors.Is(err, services.ErrOTPExpired),
+		errors.Is(err, services.ErrOTPLocked), errors.Is(err, services.ErrOTPInvalid),
+		errors.Is(err, services.ErrPasswordLength):
+		writeError(w, 400, err.Error())
+	default:
+		log.Printf("password reset: %v", err)
+		writeError(w, 500, "Unable to process the password reset")
+	}
+}
+
+func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
+	var req models.VerifyOTPRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.Email) == "" || req.OTP == "" {
+		writeError(w, 400, "Email and OTP are required")
+		return
+	}
+	writeOTPResult(w, h.otpService.VerifyOTP(strings.TrimSpace(req.Email), req.OTP), "OTP verified")
+}
+
+func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var req models.ResetPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.Email) == "" || req.OTP == "" {
+		writeError(w, 400, "Email and OTP are required")
+		return
+	}
+	writeOTPResult(w, h.otpService.ResetPassword(strings.TrimSpace(req.Email), req.OTP, req.NewPassword), "Password reset successfully")
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {

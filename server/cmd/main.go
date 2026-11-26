@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"task-manager-server/internal/config"
+	"task-manager-server/internal/email"
 	"task-manager-server/internal/handlers"
 	"task-manager-server/internal/middleware"
 	"task-manager-server/internal/routes"
@@ -27,12 +28,14 @@ func main() {
 		log.Print("Using a per-process signing key. Configure JWT_SECRET with a random secret of at least 32 bytes for persistent sessions.")
 	}
 	adminService := services.NewAdminService(db)
-	adminHandler := handlers.NewAdminHandler(adminService)
 	authService := services.NewAuthService(db, secret)
 	taskService := services.NewTaskService(db)
 
-	authHandler := handlers.NewAuthHandler(authService, taskService, secret)
-	taskHandler := handlers.NewTaskHandler(taskService)
+	mailer := email.NewEmailService()
+	otpService := services.NewOTPService(db, mailer)
+	authHandler := handlers.NewAuthHandler(authService, taskService, otpService, secret)
+	taskHandler := handlers.NewTaskHandler(taskService, mailer, authService)
+	adminHandler := handlers.NewAdminHandler(adminService, taskHandler.NotifyDeleted)
 
 	router := routes.SetupRoutes(authHandler, taskHandler, adminHandler, secret, adminService.IsAdmin)
 

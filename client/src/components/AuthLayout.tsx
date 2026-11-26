@@ -1,19 +1,24 @@
 import type { ReactNode } from 'react'
-import { Layers3 } from 'lucide-react'
+import { Layers3, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import '../pages/Dashboard.css'
 import './AuthLayout.css'
 
-type Props = { mode: 'login' | 'register' | 'admin'; children: ReactNode }
+type Props = { children: ReactNode } & (
+  | { mode: 'login' | 'register' | 'admin' }
+  | { mode: 'recovery'; title: string; subtitle?: string; footer: ReactNode }
+)
 
-export default function AuthLayout({ mode, children }: Props) {
+export default function AuthLayout(props: Props) {
+  const { mode, children } = props
   const signingIn = mode !== 'register'
+  const BrandIcon = mode === 'recovery' ? Zap : Layers3
   return (
     <div className="workspace auth-screen">
       <header className="workspace-nav">
         <div className="workspace-wrap nav-inner">
           <span className="brand">
-            <Layers3 aria-hidden="true" size={27} strokeWidth={2.5} />
+            <BrandIcon aria-hidden="true" size={27} strokeWidth={2.5} />
             Fokus
           </span>
         </div>
@@ -49,10 +54,10 @@ export default function AuthLayout({ mode, children }: Props) {
           </aside>
           <section className="auth-form-panel" aria-labelledby="auth-title">
             <h1 id="auth-title">
-              {mode === 'admin' ? 'Admin Access' : signingIn ? 'Welcome back' : 'Create an account'}
+              {mode === 'recovery' ? props.title : mode === 'admin' ? 'Admin Access' : signingIn ? 'Welcome back' : 'Create an account'}
               <span>.</span>
             </h1>
-            {signingIn && (
+            {mode === 'recovery' ? (props.subtitle && <p className="auth-intro">{props.subtitle}</p>) : signingIn && (
               <p className="auth-intro">
                 {mode === 'admin'
                   ? 'Sign in to manage users and tasks.'
@@ -60,7 +65,9 @@ export default function AuthLayout({ mode, children }: Props) {
               </p>
             )}
             {children}
-            {mode === 'admin' ? (
+            {mode === 'recovery' ? (
+              <p className="auth-switch">{props.footer}</p>
+            ) : mode === 'admin' ? (
               <p className="auth-switch">
                 <Link to="/login">Back to user sign in</Link>
               </p>
