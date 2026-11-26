@@ -26,3 +26,17 @@ type AuthResponse struct {
 	User  User   `json:"user"`
 	Token string `json:"token"`
 }
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email"`
+}
+
+type VerifyOTPRequest struct {
+	Email string `json:"email"`
+	OTP   string `json:"otp"`
+}
+
+type ResetPasswordRequest struct {
+	VerifyOTPRequest
+	NewPassword string `json:"newPassword"`
+}

@@ -6,18 +6,71 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	"task-manager-server/internal/email"
 	"task-manager-server/internal/middleware"
 	"task-manager-server/internal/models"
 	"task-manager-server/internal/services"
 )
 
-type TaskHandler struct {
-	taskService *services.TaskService
+type taskMailer interface {
+	SendTaskNotification(string, email.TaskEmailData) error
 }
 
-func NewTaskHandler(taskService *services.TaskService) *TaskHandler {
-	return &TaskHandler{taskService: taskService}
+type TaskHandler struct {
+	taskService  *services.TaskService
+	emailService taskMailer
+	authService  *services.AuthService
+}
+
+func NewTaskHandler(taskService *services.TaskService, mailer taskMailer, auth *services.AuthService) *TaskHandler {
+	return &TaskHandler{taskService: taskService, emailService: mailer, authService: auth}
+}
+
+func (h *TaskHandler) NotifyDeleted(task *models.Task) {
+	h.notify(task, "deleted", nil)
+}
+
+func (h *TaskHandler) notify(task *models.Task, action string, changes []email.TaskChange) {
+	user, err := h.authService.GetUserByID(task.UserID)
+	if err != nil {
+		log.Printf("task notification recipient: %v", err)
+		return
+	}
+	err = h.emailService.SendTaskNotification(user.Email, email.TaskEmailData{
+		UserName: user.Name, Action: action, TaskTitle: task.Title, TaskDescription: task.Description, Changes: changes,
+	})
+	if err != nil {
+		log.Printf("task notification: %v", err)
+	}
+}
+
+func taskChanges(old, updated *models.Task) []email.TaskChange {
+	var changes []email.TaskChange
+	add := func(field, before, after string) {
+		if before != after {
+			changes = append(changes, email.TaskChange{Field: field, OldValue: before, NewValue: after})
+		}
+	}
+	add("Title", old.Title, updated.Title)
+	add("Description", old.Description, updated.Description)
+	status := func(done bool) string {
+		if done {
+			return "Completed"
+		}
+		return "Pending"
+	}
+	add("Status", status(old.Done), status(updated.Done))
+	add("Priority", old.Priority, updated.Priority)
+	date := func(day *time.Time) string {
+		if day == nil {
+			return "No due date"
+		}
+		return day.Format(time.DateOnly)
+	}
+	add("Due date", date(old.DueDate), date(updated.DueDate))
+	return changes
 }
 
 func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
@@ -88,6 +141,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("CreateTask: user=%d id=%d priority=%s", userID, task.ID, task.Priority)
+	go h.notify(task, "created", nil)
 	writeJSON(w, http.StatusCreated, task)
 }
 
@@ -111,12 +165,13 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
-	updated, err := h.taskService.UpdateTask(id, userID, &req)
+	before, updated, err := h.taskService.UpdateTask(id, userID, &req)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "Task not found")
 		return
 	}
 	log.Printf("UpdateTask: user=%d id=%d done=%v priority=%s", userID, id, updated.Done, updated.Priority)
+	go h.notify(updated, "updated", taskChanges(before, updated))
 	writeJSON(w, http.StatusOK, updated)
 }
 
@@ -135,11 +190,13 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "Invalid task ID")
 		return
 	}
-	if err := h.taskService.DeleteTask(id, userID); err != nil {
+	deleted, err := h.taskService.DeleteTask(id, userID)
+	if err != nil {
 		writeError(w, http.StatusNotFound, "Task not found")
 		return
 	}
 	log.Printf("DeleteTask: user=%d id=%d", userID, id)
+	go h.NotifyDeleted(deleted)
 	writeJSON(w, http.StatusOK, map[string]string{"message": "Task deleted successfully"})
 }
 

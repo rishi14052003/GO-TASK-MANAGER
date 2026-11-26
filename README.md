@@ -91,6 +91,10 @@ CREATE TABLE tasks (
 
 ## Environment Variables
 
+For password recovery, run `server/migrations/002_create_otps.sql` against each MySQL database.
+Set `SMTP_FROM` to the Gmail sender address and `SMTP_PASS` to its app password in the server environment (including Render).
+These settings also enable task notification emails.
+
 Create `server/.env`:
 
 ```env

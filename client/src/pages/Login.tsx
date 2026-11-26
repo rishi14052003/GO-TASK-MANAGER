@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { api } from '../services/api'
 import AuthLayout from '../components/AuthLayout'
@@ -58,6 +58,7 @@ export default function Login({ admin = false }: { admin?: boolean }) {
           />
         </div>
         <PasswordField autoComplete="current-password" placeholder="Enter your password" />
+        {!admin && <Link className="justify-self-end text-xs text-slate-500 hover:text-slate-300 transition" to="/forgot-password">Forgot password?</Link>}
         {error && (
           <p role="alert" className="auth-error">
             {error}

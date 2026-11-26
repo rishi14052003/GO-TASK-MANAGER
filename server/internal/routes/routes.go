@@ -12,6 +12,9 @@ func SetupRoutes(authHandler *handlers.AuthHandler, taskHandler *handlers.TaskHa
 
 	mux.HandleFunc("/api/register", authHandler.Register)
 	mux.HandleFunc("/api/login", authHandler.Login)
+	mux.HandleFunc("POST /api/forgot-password", authHandler.ForgotPassword)
+	mux.HandleFunc("POST /api/verify-otp", authHandler.VerifyOTP)
+	mux.HandleFunc("POST /api/reset-password", authHandler.ResetPassword)
 
 	taskMux := http.NewServeMux()
 	taskMux.HandleFunc("/api/tasks", func(w http.ResponseWriter, r *http.Request) {

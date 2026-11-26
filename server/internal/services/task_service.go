@@ -53,12 +53,21 @@ func (s *TaskService) GetTasks(userID int) ([]models.Task, error) {
 }
 
 func (s *TaskService) GetTask(id, userID int) (*models.Task, error) {
+	return readTask(s.db, id, userID, false)
+}
+
+type taskReader interface {
+	QueryRow(string, ...any) *sql.Row
+}
+
+func readTask(db taskReader, id, userID int, lock bool) (*models.Task, error) {
 	var t models.Task
-	err := s.db.QueryRow(
-		`SELECT id, title, description, done, priority, due_date, user_id, created_at, updated_at
-		 FROM tasks WHERE id = ? AND user_id = ? LIMIT 1`,
-		id, userID,
-	).Scan(&t.ID, &t.Title, &t.Description, &t.Done, &t.Priority, &t.DueDate,
+	query := `SELECT id, title, COALESCE(description, ''), done, COALESCE(priority, 'medium'), due_date, user_id, created_at, updated_at
+        FROM tasks WHERE id = ? AND user_id = ? LIMIT 1`
+	if lock {
+		query += " FOR UPDATE"
+	}
+	err := db.QueryRow(query, id, userID).Scan(&t.ID, &t.Title, &t.Description, &t.Done, &t.Priority, &t.DueDate,
 		&t.UserID, &t.CreatedAt, &t.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, errors.New("task not found")
@@ -100,13 +109,22 @@ func (s *TaskService) CreateTask(req *models.CreateTaskRequest, userID int) (*mo
 	}, nil
 }
 
-func (s *TaskService) UpdateTask(id, userID int, req *models.UpdateTaskRequest) (*models.Task, error) {
+func (s *TaskService) UpdateTask(id, userID int, req *models.UpdateTaskRequest) (before, after *models.Task, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+	before, err = readTask(tx, id, userID, true)
+	if err != nil {
+		return nil, nil, err
+	}
 	var priority *string
 	if req.Priority != nil {
 		p := validPriority(*req.Priority)
 		priority = &p
 	}
-	_, err := s.db.Exec(
+	_, err = tx.Exec(
 		`UPDATE tasks SET title = COALESCE(?, title), description = COALESCE(?, description),
 		 done = COALESCE(?, done), priority = COALESCE(?, priority),
 		 due_date = IF(?, ?, due_date), updated_at = ?
@@ -115,22 +133,27 @@ func (s *TaskService) UpdateTask(id, userID int, req *models.UpdateTaskRequest) 
 		req.DueDate, time.Now(), id, userID,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return s.GetTask(id, userID)
+	after, err = readTask(tx, id, userID, false)
+	if err != nil {
+		return nil, nil, err
+	}
+	return before, after, tx.Commit()
 }
 
-func (s *TaskService) DeleteTask(id, userID int) error {
-	res, err := s.db.Exec(`DELETE FROM tasks WHERE id = ? AND user_id = ?`, id, userID)
+func (s *TaskService) DeleteTask(id, userID int) (*models.Task, error) {
+	tx, err := s.db.Begin()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	affected, err := res.RowsAffected()
+	defer tx.Rollback()
+	task, err := readTask(tx, id, userID, true)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if affected == 0 {
-		return errors.New("task not found")
+	if _, err = tx.Exec("DELETE FROM tasks WHERE id = ? AND user_id = ?", id, userID); err != nil {
+		return nil, err
 	}
-	return nil
+	return task, tx.Commit()
 }
