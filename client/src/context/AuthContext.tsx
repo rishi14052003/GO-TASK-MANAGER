@@ -77,6 +77,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, [])
 
+  const updateUser = useCallback(
+    (updatedUser: User) => {
+      // Ignore a profile response that arrives after sign-out or an account switch.
+      const stored = window.localStorage.getItem(AUTH_STORAGE_KEY)
+      if (token && stored && JSON.parse(stored).token === token) persist(updatedUser, token)
+    },
+    [persist, token]
+  )
+
   const logout = useCallback(() => {
     clear()
   }, [clear])
@@ -90,9 +99,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       error,
       login,
       register,
+      updateUser,
       logout,
     }),
-    [user, token, isLoading, error, login, register, logout]
+    [user, token, isLoading, error, login, register, updateUser, logout]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

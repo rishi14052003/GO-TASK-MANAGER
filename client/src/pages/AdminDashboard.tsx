@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Layers3, Trash2 } from 'lucide-react'
+import { useToast } from '../context/useToast'
 import { api, ApiError, type AdminStats, type AdminTask } from '../services/api'
 import type { User } from '../types/user'
 import './Dashboard.css'
@@ -19,7 +20,8 @@ export default function AdminDashboard() {
   const [data, setData] = useState<{ stats: AdminStats; users: User[]; tasks: AdminTask[] } | null>(
     null
   )
-  const [error, setError] = useState('')
+  const { showToast } = useToast()
+  const [failed, setFailed] = useState(false)
   const [busy, setBusy] = useState(true)
   const [revision, setRevision] = useState(0)
 
@@ -33,10 +35,11 @@ export default function AdminDashboard() {
       if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
         signOut()
       } else {
-        setError(err instanceof Error ? err.message : 'Unable to reach the admin service.')
+        setFailed(true)
+        showToast(err instanceof Error ? err.message : 'Unable to reach the admin service.', 'error')
       }
     },
-    [signOut]
+    [signOut, showToast]
   )
 
   useEffect(() => {
@@ -59,7 +62,7 @@ export default function AdminDashboard() {
 
   function refresh() {
     setBusy(true)
-    setError('')
+    setFailed(false)
     setRevision((v) => v + 1)
   }
 
@@ -69,7 +72,7 @@ export default function AdminDashboard() {
       kind === 'user' ? `Delete ${name} and all their tasks?` : `Delete task “${name}”?`
     if (!window.confirm(prompt)) return
     setBusy(true)
-    setError('')
+    setFailed(false)
     try {
       if (kind === 'user') await api.adminDeleteUser(token, id)
       else await api.adminDeleteTask(token, id)
@@ -131,15 +134,14 @@ export default function AdminDashboard() {
             Admin dashboard<span>.</span>
           </h1>
         </div>
-        {error && (
-          <div className="work-error" role="alert">
-            {error}{' '}
+        {failed && (
+          <div className="mb-4">
             <button className="underline" disabled={busy} onClick={refresh}>
               Retry
             </button>
           </div>
         )}
-        {!data && !error && (
+        {!data && busy && (
           <p role="status" className="blank-state">
             Loading dashboard…
           </p>

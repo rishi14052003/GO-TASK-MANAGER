@@ -12,6 +12,7 @@ type AuthState = {
 export type AuthContextValue = AuthState & {
   login: (payload: LoginRequest) => Promise<void>
   register: (payload: RegisterRequest) => Promise<void>
+  updateUser: (updatedUser: User) => void
   logout: () => void
 }
 

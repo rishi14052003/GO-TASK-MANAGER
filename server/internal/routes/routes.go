@@ -7,7 +7,7 @@ import (
 	"task-manager-server/internal/middleware"
 )
 
-func SetupRoutes(authHandler *handlers.AuthHandler, taskHandler *handlers.TaskHandler, admin *handlers.AdminHandler, secret []byte, checkAdmin middleware.AdminCheck) http.Handler {
+func SetupRoutes(authHandler *handlers.AuthHandler, taskHandler *handlers.TaskHandler, admin *handlers.AdminHandler, user *handlers.UserHandler, secret []byte, checkAdmin middleware.AdminCheck) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/api/register", authHandler.Register)
@@ -37,6 +37,12 @@ func SetupRoutes(authHandler *handlers.AuthHandler, taskHandler *handlers.TaskHa
 
 	mux.Handle("/api/tasks", middleware.AuthMiddleware(secret, taskMux))
 	mux.Handle("/api/tasks/", middleware.AuthMiddleware(secret, taskMux))
+
+	userMux := http.NewServeMux()
+	userMux.HandleFunc("GET /api/user/profile", user.GetProfile)
+	userMux.HandleFunc("PUT /api/user/profile", user.UpdateProfile)
+	userMux.HandleFunc("PUT /api/user/password", user.ChangePassword)
+	mux.Handle("/api/user/", middleware.AuthMiddleware(secret, userMux))
 
 	adminMux := http.NewServeMux()
 	adminMux.HandleFunc("GET /api/admin/stats", admin.GetStats)
