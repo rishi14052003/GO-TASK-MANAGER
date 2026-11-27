@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
+import { useToast } from '../context/useToast'
 import { api } from '../services/api'
 import AuthLayout from '../components/AuthLayout'
 import PasswordField from '../components/PasswordField'
@@ -8,7 +9,7 @@ import { useAuth } from '../context/useAuth'
 
 export default function Login({ admin = false }: { admin?: boolean }) {
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
+  const { showToast } = useToast()
   const { login } = useAuth()
   const navigate = useNavigate()
 
@@ -17,7 +18,6 @@ export default function Login({ admin = false }: { admin?: boolean }) {
     if (submitting) return
     const fields = new FormData(event.currentTarget)
     setSubmitting(true)
-    setError('')
     try {
       const credentials = {
         email: String(fields.get('email')),
@@ -27,7 +27,7 @@ export default function Login({ admin = false }: { admin?: boolean }) {
         localStorage.removeItem('admin_token')
         const { user, token } = await api.login(credentials)
         if (!user.isAdmin) {
-          setError('You do not have admin access')
+          showToast('You do not have admin access', 'error')
           return
         }
         localStorage.setItem('admin_token', token)
@@ -37,7 +37,7 @@ export default function Login({ admin = false }: { admin?: boolean }) {
         navigate('/dashboard', { replace: true })
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to sign in.')
+      showToast(err instanceof Error ? err.message : 'Unable to sign in.', 'error')
     } finally {
       setSubmitting(false)
     }
@@ -58,11 +58,7 @@ export default function Login({ admin = false }: { admin?: boolean }) {
           />
         </div>
         <PasswordField autoComplete="current-password" placeholder="Enter your password" />
-        {error && (
-          <p role="alert" className="auth-error">
-            {error}
-          </p>
-        )}
+
         <button className="add-button" type="submit" disabled={submitting}>
           {submitting ? 'Signing in…' : 'Sign in'}
           <ArrowRight size={16} aria-hidden="true" />

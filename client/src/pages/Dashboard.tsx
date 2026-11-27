@@ -20,6 +20,7 @@ import Navbar from '../components/Navbar'
 import StatsCard from '../components/StatsCard'
 import TaskCard from '../components/TaskCard'
 import { useAuth } from '../context/useAuth'
+import { useToast } from '../context/useToast'
 import { api } from '../services/api'
 import type { Task as ApiTask, Priority } from '../types/task'
 
@@ -43,7 +44,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [isAdding, setIsAdding] = useState(false)
   const [showForm, setShowForm] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { showToast, setToastHost } = useToast()
   const [filter, setFilter] = useState<'all' | 'pending' | 'done'>('all')
   const [priorityFilter, setPriorityFilter] = useState<Priority | 'all'>('all')
   const [search, setSearch] = useState('')
@@ -66,11 +67,10 @@ const Dashboard = () => {
       .then((data) => {
         if (active) {
           setTasks(Array.isArray(data) ? data : [])
-          setError(null)
         }
       })
       .catch((err: unknown) => {
-        if (active) setError(err instanceof Error ? err.message : 'Unable to load tasks.')
+        if (active) showToast(err instanceof Error ? err.message : 'Unable to load tasks.', 'error')
       })
       .finally(() => {
         if (active) setIsLoading(false)
@@ -78,7 +78,42 @@ const Dashboard = () => {
     return () => {
       active = false
     }
-  }, [token])
+  }, [token, showToast])
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.altKey ||
+        event.metaKey ||
+        event.ctrlKey
+      )
+        return
+      if (event.key === 'Escape') {
+        if (showForm) {
+          event.preventDefault()
+          if (!isAdding) setShowForm(false)
+        } else if (search) {
+          setSearch('')
+        }
+        return
+      }
+
+      const target = event.target
+      if (showForm || event.repeat || !(target instanceof HTMLElement)) return
+      if (target.isContentEditable || target.closest('input, textarea, select')) return
+      if (event.key.toLowerCase() === 'n') {
+        event.preventDefault()
+        setShowForm(true)
+      } else if (event.key === '/') {
+        event.preventDefault()
+        searchInput.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showForm, isAdding, search])
 
   const stats = useMemo(() => {
     const total = tasks.length
@@ -147,6 +182,7 @@ const Dashboard = () => {
       })
       .then((created) => {
         setTasks((prev) => [created, ...prev])
+        showToast('Task created', 'success')
         setNewTitle('')
         setNewDescription('')
         setNewDueDate('')
@@ -154,7 +190,7 @@ const Dashboard = () => {
         setShowForm(false)
       })
       .catch((err: unknown) =>
-        setError(err instanceof Error ? err.message : 'Unable to create task.')
+        showToast(err instanceof Error ? err.message : 'Unable to create task.', 'error')
       )
       .finally(() => setIsAdding(false))
   }
@@ -165,9 +201,12 @@ const Dashboard = () => {
     if (!task) return
     api
       .updateTask(token, id, { done: !task.done })
-      .then((updated) => setTasks((prev) => prev.map((t) => (t.id === id ? updated : t))))
+      .then((updated) => {
+        setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
+        showToast('Task updated', 'success')
+      })
       .catch((err: unknown) =>
-        setError(err instanceof Error ? err.message : 'Unable to update task.')
+        showToast(err instanceof Error ? err.message : 'Unable to update task.', 'error')
       )
   }
 
@@ -176,13 +215,13 @@ const Dashboard = () => {
     updates: Pick<ApiTask, 'title' | 'description' | 'priority'>
   ) => {
     if (!token) return false
-    setError(null)
     try {
       const updated = await api.updateTask(token, id, updates)
       setTasks((prev) => prev.map((task) => (task.id === id ? updated : task)))
+      showToast('Task saved', 'success')
       return true
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to save task.')
+      showToast(err instanceof Error ? err.message : 'Unable to save task.', 'error')
       return false
     }
   }
@@ -191,9 +230,12 @@ const Dashboard = () => {
     if (!token) return
     api
       .deleteTask(token, id)
-      .then(() => setTasks((prev) => prev.filter((t) => t.id !== id)))
+      .then(() => {
+        setTasks((prev) => prev.filter((t) => t.id !== id))
+        showToast('Task deleted', 'success')
+      })
       .catch((err: unknown) =>
-        setError(err instanceof Error ? err.message : 'Unable to delete task.')
+        showToast(err instanceof Error ? err.message : 'Unable to delete task.', 'error')
       )
   }
 
@@ -375,11 +417,7 @@ const Dashboard = () => {
                 : `${filteredTasks.length} task${filteredTasks.length === 1 ? '' : 's'} found`}
             </p>
           )}
-          {error && (
-            <p role="alert" className="work-error">
-              {error}
-            </p>
-          )}
+
           {isLoading ? (
             <p className="blank-state">Loading tasks…</p>
           ) : filteredTasks.length === 0 ? (
@@ -433,6 +471,20 @@ const Dashboard = () => {
             </div>
           )}
         </section>
+        <div className="mt-8 flex items-center justify-center gap-6 pb-6">
+          {[
+            { key: 'N', label: 'New task' },
+            { key: '/', label: 'Search' },
+            { key: 'Esc', label: 'Close' },
+          ].map(({ key, label }) => (
+            <div key={key} className="flex items-center gap-1.5 text-xs text-slate-400">
+              <kbd className="rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 font-mono">
+                {key}
+              </kbd>
+              <span>{label}</span>
+            </div>
+          ))}
+        </div>
       </main>
       {showForm && (
         <dialog
@@ -505,11 +557,7 @@ const Dashboard = () => {
                 ))}
               </div>
             </fieldset>
-            {error && (
-              <p className="work-error" role="alert">
-                {error}
-              </p>
-            )}
+
             <div className="dialog-actions">
               <button type="button" disabled={isAdding} onClick={() => setShowForm(false)}>
                 Cancel
@@ -520,6 +568,7 @@ const Dashboard = () => {
               </button>
             </div>
           </form>
+          <div ref={setToastHost} />
         </dialog>
       )}
     </div>

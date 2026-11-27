@@ -90,6 +90,26 @@ export const api = {
     })
   },
 
+  getProfile(token: string): Promise<User> {
+    return request<User>('/user/profile', { headers: { Authorization: `Bearer ${token}` } })
+  },
+
+  updateProfile(token: string, name: string): Promise<User> {
+    return request<User>('/user/profile', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ name }),
+    })
+  },
+
+  changePassword(token: string, currentPassword: string, newPassword: string) {
+    return request<{ message: string }>('/user/password', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+  },
+
   getTasks(token: string): Promise<Task[]> {
     return request<Task[]>('/tasks', {
       method: 'GET',

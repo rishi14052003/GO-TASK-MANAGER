@@ -26,3 +26,12 @@ type AuthResponse struct {
 	User  User   `json:"user"`
 	Token string `json:"token"`
 }
+
+type UpdateProfileRequest struct {
+	Name string `json:"name"`
+}
+
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"currentPassword"`
+	NewPassword     string `json:"newPassword"`
+}

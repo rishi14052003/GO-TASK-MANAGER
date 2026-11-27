@@ -34,7 +34,10 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authService, taskService, secret)
 	taskHandler := handlers.NewTaskHandler(taskService)
 
-	router := routes.SetupRoutes(authHandler, taskHandler, adminHandler, secret, adminService.IsAdmin)
+	userService := services.NewUserService(db)
+	userHandler := handlers.NewUserHandler(userService)
+
+	router := routes.SetupRoutes(authHandler, taskHandler, adminHandler, userHandler, secret, adminService.IsAdmin)
 
 	finalHandler := middleware.CORSMiddleware(router)
 

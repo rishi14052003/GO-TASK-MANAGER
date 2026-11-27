@@ -1,4 +1,4 @@
-import { Layers3, LogOut } from 'lucide-react'
+import { Layers3, LogOut, Settings } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 
@@ -23,6 +23,14 @@ export default function Navbar({ userName = 'User' }: { userName?: string }) {
         <div className="account">
           <span className="avatar">{initials}</span>
           <span className="account-name">{userName}</span>
+          <button
+            aria-label="Profile settings"
+            title="Profile settings"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+            onClick={() => navigate('/profile')}
+          >
+            <Settings size={16} />
+          </button>
           <button
             aria-label="Log out"
             title="Log out"

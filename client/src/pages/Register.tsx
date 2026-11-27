@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import AuthLayout from '../components/AuthLayout'
 import PasswordField from '../components/PasswordField'
+import { useToast } from '../context/useToast'
 import { useAuth } from '../context/useAuth'
 
 export default function Register() {
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
+  const { showToast } = useToast()
   const { register } = useAuth()
   const navigate = useNavigate()
 
@@ -17,11 +18,10 @@ export default function Register() {
     const fields = new FormData(event.currentTarget)
     const password = String(fields.get('password'))
     if (password !== fields.get('confirm-password')) {
-      setError('Passwords do not match')
+      showToast('Passwords do not match', 'error')
       return
     }
     setSubmitting(true)
-    setError('')
     try {
       await register({
         name: String(fields.get('name')),
@@ -30,7 +30,7 @@ export default function Register() {
       })
       navigate('/login', { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to create account.')
+      showToast(err instanceof Error ? err.message : 'Unable to create account.', 'error')
     } finally {
       setSubmitting(false)
     }
@@ -61,11 +61,7 @@ export default function Register() {
           autoComplete="new-password"
           placeholder="Repeat your password"
         />
-        {error && (
-          <p role="alert" className="auth-error">
-            {error}
-          </p>
-        )}
+
         <button className="add-button" type="submit" disabled={submitting}>
           {submitting ? 'Creating account…' : 'Create account'}
           <ArrowRight size={16} aria-hidden="true" />
