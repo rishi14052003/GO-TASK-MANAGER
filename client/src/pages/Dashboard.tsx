@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity,
+  ArrowUpDown,
   AlertCircle,
   Calendar,
   CalendarClock,
@@ -110,6 +111,27 @@ const Dashboard = () => {
         task.title.toLowerCase().includes(query) || task.description?.toLowerCase().includes(query)
     )
   }, [tasksInFilter, searchTerm])
+
+  const [sortBy, setSortBy] = useState('newest')
+  const sortedTasks = useMemo(() => {
+    const priorityOrder = { high: 0, medium: 1, low: 2 }
+    return [...filteredTasks].sort((a, b) => {
+      switch (sortBy) {
+        case 'oldest':
+          return Date.parse(a.createdAt) - Date.parse(b.createdAt)
+        case 'priority-high':
+          return (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1)
+        case 'priority-low':
+          return (priorityOrder[b.priority] ?? 1) - (priorityOrder[a.priority] ?? 1)
+        case 'alpha-asc':
+          return a.title.localeCompare(b.title)
+        case 'alpha-desc':
+          return b.title.localeCompare(a.title)
+        default:
+          return Date.parse(b.createdAt) - Date.parse(a.createdAt)
+      }
+    })
+  }, [filteredTasks, sortBy])
 
   const searchCausedEmpty = tasksInFilter.length > 0 && filteredTasks.length === 0
 
@@ -320,6 +342,22 @@ const Dashboard = () => {
               </select>
               <ChevronDown size={13} />
             </label>
+            <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2">
+              <ArrowUpDown className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+              <select
+                aria-label="Sort tasks"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="cursor-pointer bg-transparent text-sm text-slate-300 [color-scheme:dark]"
+              >
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="priority-high">Priority: High → Low</option>
+                <option value="priority-low">Priority: Low → High</option>
+                <option value="alpha-asc">Name: A → Z</option>
+                <option value="alpha-desc">Name: Z → A</option>
+              </select>
+            </div>
           </div>
           {deadline !== 'all' && (
             <button
@@ -370,13 +408,13 @@ const Dashboard = () => {
               </p>
             </div>
           ) : view === 'list' ? (
-            <div className="task-list">{filteredTasks.map(renderTask)}</div>
+            <div className="task-list">{sortedTasks.map(renderTask)}</div>
           ) : (
             <div className="task-board">
               {(['pending', 'done'] as const)
                 .filter((status) => filter === 'all' || filter === status)
                 .map((status) => {
-                  const cards = filteredTasks.filter((task) => task.done === (status === 'done'))
+                  const cards = sortedTasks.filter((task) => task.done === (status === 'done'))
                   return (
                     <section key={status} className="board-column">
                       <h3>
